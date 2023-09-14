@@ -26,8 +26,9 @@ export const RepositoriesList = () => {
         })
         .filter((repository) => {
           // if this is an archived repository and we are not including archived repositories, hide it
-          if (!isIncludingArchived && repository.archived) return true;
-          return false;
+          if (!isIncludingArchived && repository.archived) return false;
+
+          return true;
         })
     );
   }, [filterText, isIncludingArchived, repositories]);
