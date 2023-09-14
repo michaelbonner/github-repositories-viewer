@@ -17,6 +17,8 @@ export const RepositoriesList = () => {
   const [filterText, setFilterText] = useState<string>("");
   const [isIncludingArchived, setIsIncludingArchived] =
     useState<boolean>(false);
+  const [isLoadingRepositories, setIsLoadingRepositories] =
+    useState<boolean>(false);
 
   useEffect(() => {
     setFilteredRepositories(
@@ -55,6 +57,7 @@ export const RepositoriesList = () => {
   }
 
   const fetchRepositories = async (page: number) => {
+    setIsLoadingRepositories(true);
     setErrorText(null);
     const response = await fetch(
       `https://api.github.com/user/repos?sort=updated&direction=desc&per_page=100&page=${page}`,
@@ -67,8 +70,22 @@ export const RepositoriesList = () => {
 
     const responseData = await response.json();
 
+    setIsLoadingRepositories(false);
+
     if (Array.isArray(responseData)) {
-      setRepositories((repositories) => [...repositories, ...responseData]);
+      setRepositories((r) =>
+        [...r, ...responseData].reduce((acc, current) => {
+          const x = acc.find(
+            (item: GithubRepository) => item.id === current.id
+          );
+
+          if (!x) {
+            return acc.concat([current]);
+          } else {
+            return acc;
+          }
+        }, [])
+      );
     } else {
       setErrorText(
         responseData?.message ||
@@ -101,34 +118,45 @@ export const RepositoriesList = () => {
           </button>
         </div>
       </div>
+      {(repositories.length > 0 || isLoadingRepositories) && (
+        <div className="flex gap-4">
+          <div className="max-w-sm">
+            <label className="text-sm font-bold" htmlFor="filterText">
+              Search
+            </label>
+            <input
+              className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="filterText"
+              type="text"
+              onChange={(event) => {
+                setFilterText(event.target.value);
+              }}
+              value={filterText}
+            />
+          </div>
+          <div className="max-w-sm grid">
+            <label className="text-sm font-bold" htmlFor="filterText">
+              Include Archived
+            </label>
+            <Toggle
+              enabled={isIncludingArchived}
+              setEnabled={setIsIncludingArchived}
+            />
+          </div>
+          <div>Filtered Repositories: {filteredRepositories.length}</div>
+        </div>
+      )}
+      {isLoadingRepositories && (
+        <div className="grid gap-12 mt-6">
+          <LoadingRepositorySkeleton />
+          <LoadingRepositorySkeleton />
+          <LoadingRepositorySkeleton />
+          <LoadingRepositorySkeleton />
+          <LoadingRepositorySkeleton />
+        </div>
+      )}
       {repositories.length > 0 && (
         <>
-          <div className="flex gap-4">
-            <div className="max-w-sm">
-              <label className="text-sm font-bold" htmlFor="filterText">
-                Search
-              </label>
-              <input
-                className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="filterText"
-                type="text"
-                onChange={(event) => {
-                  setFilterText(event.target.value);
-                }}
-                value={filterText}
-              />
-            </div>
-            <div className="max-w-sm grid">
-              <label className="text-sm font-bold" htmlFor="filterText">
-                Include Archived
-              </label>
-              <Toggle
-                enabled={isIncludingArchived}
-                setEnabled={setIsIncludingArchived}
-              />
-            </div>
-            <div>Filtered Repositories: {filteredRepositories.length}</div>
-          </div>
           <div className="grid gap-4">
             {repositories.map((repository) => {
               const shouldHide = () => {
@@ -212,7 +240,6 @@ const Repository = ({
         </a>
       </h3>
       <div className="mt-2 flex items-center gap-4">
-        <h4>Collaborators</h4>
         <ul className="flex gap-2 flex-wrap">
           {collaboratorState === "initial" && <li>Loading...</li>}
           {collaborators.map((collaborator) => {
@@ -236,6 +263,24 @@ const Repository = ({
           })}
         </ul>
         {errorText && <p className="text-red-700">{errorText}</p>}
+      </div>
+    </div>
+  );
+};
+
+const LoadingRepositorySkeleton = () => {
+  return (
+    <div className="grid gap-4">
+      <div className="flex gap-3 items-center">
+        <div className="bg-gray-200 animate-pulse rounded-full w-6 h-6"></div>
+        <div className="flex items-center gap-2">
+          <div className="bg-gray-200 animate-pulse rounded-full w-48 h-5"></div>
+          <div>/</div>
+          <div className="bg-gray-200 animate-pulse rounded-full w-48 h-5"></div>
+        </div>
+      </div>
+      <div className="flex gap-3 items-center">
+        <div className="bg-gray-200 animate-pulse rounded-md w-48 h-10"></div>
       </div>
     </div>
   );
