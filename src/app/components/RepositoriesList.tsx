@@ -14,7 +14,8 @@ export const RepositoriesList = () => {
     GithubRepository[]
   >([]);
   const [filterText, setFilterText] = useState<string>("");
-  const [isIncludingArchived, setIsIncludingArchived] = useState<boolean>(true);
+  const [isIncludingArchived, setIsIncludingArchived] =
+    useState<boolean>(false);
 
   useEffect(() => {
     setFilteredRepositories(
