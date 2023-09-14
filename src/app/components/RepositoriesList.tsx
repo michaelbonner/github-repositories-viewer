@@ -51,12 +51,16 @@ export const RepositoriesList = () => {
         },
       }
     );
-    const newRepositories = await response.json();
 
-    if (Array.isArray(newRepositories)) {
-      setRepositories((repositories) => [...repositories, ...newRepositories]);
+    const responseData = await response.json();
+
+    if (Array.isArray(responseData)) {
+      setRepositories((repositories) => [...repositories, ...responseData]);
     } else {
-      setErrorText(newRepositories.message);
+      setErrorText(
+        responseData?.message ||
+          "An unexpected error occurred. Double check your access token and try again."
+      );
       setRepositories([]);
     }
 
@@ -114,9 +118,9 @@ export const RepositoriesList = () => {
               />
             ))}
           </div>
-          {errorText && <p className="text-red-600">{errorText}</p>}
         </>
       )}
+      {errorText && <p className="text-red-700">{errorText}</p>}
     </div>
   );
 };
@@ -202,7 +206,7 @@ const Repository = ({
             );
           })}
         </ul>
-        {errorText && <p className="text-red-600">{errorText}</p>}
+        {errorText && <p className="text-red-700">{errorText}</p>}
       </div>
     </div>
   );
