@@ -15,7 +15,7 @@ export const TokenSetter = () => {
             if (typeof localStorage !== "undefined") {
               localStorage.setItem(
                 "githubRepositoriesViewer-accessToken",
-                event.target.value
+                event.target.value.trim()
               );
             }
           }}
