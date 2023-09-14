@@ -4,23 +4,33 @@ import { GithubCollaborator } from "@/types/GithubCollaborator";
 import { GithubRepository } from "@/types/GithubRepository";
 import { useEffect, useState } from "react";
 import { AiFillGithub } from "react-icons/ai";
+import Toggle from "./Toggle";
 
 export const RepositoriesList = () => {
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [repositories, setRepositories] = useState<GithubRepository[]>([]);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [filteredRepositories, setFilteredRepositories] = useState<
     GithubRepository[]
   >([]);
   const [filterText, setFilterText] = useState<string>("");
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isIncludingArchived, setIsIncludingArchived] = useState<boolean>(true);
 
   useEffect(() => {
     setFilteredRepositories(
-      repositories.filter((repository) => {
-        return repository.name.toLowerCase().includes(filterText.toLowerCase());
-      })
+      repositories
+        .filter((repository) => {
+          return repository.name
+            .toLowerCase()
+            .includes(filterText.toLowerCase());
+        })
+        .filter((repository) => {
+          // if this is an archived repository and we are not including archived repositories, hide it
+          if (!isIncludingArchived && repository.archived) return true;
+          return false;
+        })
     );
-  }, [filterText, repositories]);
+  }, [filterText, isIncludingArchived, repositories]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -88,8 +98,9 @@ export const RepositoriesList = () => {
           </button>
         </div>
       </div>
-      {repositories.length > 0 && (
-        <>
+      {/* {repositories.length > 0 && ( */}
+      <>
+        <div className="flex gap-4">
           <div className="max-w-sm">
             <label className="text-sm font-bold" htmlFor="filterText">
               Search
@@ -104,22 +115,37 @@ export const RepositoriesList = () => {
               value={filterText}
             />
           </div>
-          <div className="grid gap-4">
-            {repositories.map((repository) => (
+          <div className="max-w-sm grid ga-p1">
+            <label className="text-sm font-bold" htmlFor="filterText">
+              Include Archived
+            </label>
+            <Toggle
+              enabled={isIncludingArchived}
+              setEnabled={setIsIncludingArchived}
+            />
+          </div>
+        </div>
+        <div>Filtered Repositories: {filteredRepositories.length}</div>
+        <div className="grid gap-4">
+          {repositories.map((repository) => {
+            const shouldHide = () => {
+              // if this repository is already in the filtered list, hide it
+              return !filteredRepositories.find(
+                (r) => r.full_name === repository.full_name
+              );
+            };
+            return (
               <Repository
                 accessToken={accessToken}
                 key={repository.id}
                 repository={repository}
-                shouldHide={
-                  !filteredRepositories.find(
-                    (r) => r.full_name === repository.full_name
-                  )
-                }
+                shouldHide={shouldHide()}
               />
-            ))}
-          </div>
-        </>
-      )}
+            );
+          })}
+        </div>
+      </>
+      {/* )} */}
       {errorText && <p className="text-red-700">{errorText}</p>}
     </div>
   );
