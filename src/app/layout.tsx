@@ -43,7 +43,7 @@ export default function RootLayout({
             </a>
           </p>
           <p className="block mt-2">
-            <span className="text-sm">©</span>2023 Bootpack Digital
+            <span className="text-sm">©</span>2023 Bootpack Digital, LLC
           </p>
         </footer>
       </body>
