@@ -99,54 +99,54 @@ export const RepositoriesList = () => {
           </button>
         </div>
       </div>
-      {/* {repositories.length > 0 && ( */}
-      <>
-        <div className="flex gap-4">
-          <div className="max-w-sm">
-            <label className="text-sm font-bold" htmlFor="filterText">
-              Search
-            </label>
-            <input
-              className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="filterText"
-              type="text"
-              onChange={(event) => {
-                setFilterText(event.target.value);
-              }}
-              value={filterText}
-            />
-          </div>
-          <div className="max-w-sm grid ga-p1">
-            <label className="text-sm font-bold" htmlFor="filterText">
-              Include Archived
-            </label>
-            <Toggle
-              enabled={isIncludingArchived}
-              setEnabled={setIsIncludingArchived}
-            />
-          </div>
-        </div>
-        <div>Filtered Repositories: {filteredRepositories.length}</div>
-        <div className="grid gap-4">
-          {repositories.map((repository) => {
-            const shouldHide = () => {
-              // if this repository is already in the filtered list, hide it
-              return !filteredRepositories.find(
-                (r) => r.full_name === repository.full_name
-              );
-            };
-            return (
-              <Repository
-                accessToken={accessToken}
-                key={repository.id}
-                repository={repository}
-                shouldHide={shouldHide()}
+      {repositories.length > 0 && (
+        <>
+          <div className="flex gap-4">
+            <div className="max-w-sm">
+              <label className="text-sm font-bold" htmlFor="filterText">
+                Search
+              </label>
+              <input
+                className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="filterText"
+                type="text"
+                onChange={(event) => {
+                  setFilterText(event.target.value);
+                }}
+                value={filterText}
               />
-            );
-          })}
-        </div>
-      </>
-      {/* )} */}
+            </div>
+            <div className="max-w-sm grid ga-p1">
+              <label className="text-sm font-bold" htmlFor="filterText">
+                Include Archived
+              </label>
+              <Toggle
+                enabled={isIncludingArchived}
+                setEnabled={setIsIncludingArchived}
+              />
+            </div>
+          </div>
+          <div>Filtered Repositories: {filteredRepositories.length}</div>
+          <div className="grid gap-4">
+            {repositories.map((repository) => {
+              const shouldHide = () => {
+                // if this repository is already in the filtered list, hide it
+                return !filteredRepositories.find(
+                  (r) => r.full_name === repository.full_name
+                );
+              };
+              return (
+                <Repository
+                  accessToken={accessToken}
+                  key={repository.id}
+                  repository={repository}
+                  shouldHide={shouldHide()}
+                />
+              );
+            })}
+          </div>
+        </>
+      )}
       {errorText && <p className="text-red-700">{errorText}</p>}
     </div>
   );
