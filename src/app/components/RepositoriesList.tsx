@@ -12,6 +12,7 @@ export const RepositoriesList = () => {
     GithubRepository[]
   >([]);
   const [filterText, setFilterText] = useState<string>("");
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
     setFilteredRepositories(
@@ -21,7 +22,22 @@ export const RepositoriesList = () => {
     );
   }, [filterText, repositories]);
 
-  if (!localStorage.getItem("githubRepositoriesViewer-accessToken")) {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (typeof localStorage !== "undefined") {
+        const accessToken = localStorage.getItem(
+          "githubRepositoriesViewer-accessToken"
+        );
+        if (accessToken) {
+          setAccessToken(accessToken);
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!accessToken) {
     return <div className="mt-8 py-2 px-4 text-orange-600"></div>;
   }
 
@@ -31,9 +47,7 @@ export const RepositoriesList = () => {
       `https://api.github.com/user/repos?sort=updated&direction=desc&per_page=100&page=${page}`,
       {
         headers: {
-          Authorization: `token ${localStorage.getItem(
-            "githubRepositoriesViewer-accessToken"
-          )}`,
+          Authorization: `token ${accessToken}`,
         },
       }
     );
@@ -89,6 +103,7 @@ export const RepositoriesList = () => {
           <div className="grid gap-4">
             {repositories.map((repository) => (
               <Repository
+                accessToken={accessToken}
                 key={repository.id}
                 repository={repository}
                 shouldHide={
@@ -107,9 +122,11 @@ export const RepositoriesList = () => {
 };
 
 const Repository = ({
+  accessToken,
   repository,
   shouldHide,
 }: {
+  accessToken: string | null;
   repository: GithubRepository;
   shouldHide: boolean;
 }) => {
@@ -126,9 +143,7 @@ const Repository = ({
         repository.collaborators_url.replace("{/collaborator}", ""),
         {
           headers: {
-            Authorization: `token ${localStorage.getItem(
-              "githubRepositoriesViewer-accessToken"
-            )}`,
+            Authorization: `token ${accessToken}`,
           },
           cache: "force-cache",
         }
@@ -144,7 +159,7 @@ const Repository = ({
       }
     };
     fetchCollaborators();
-  }, [repository.collaborators_url]);
+  }, [accessToken, repository.collaborators_url]);
 
   if (shouldHide) return <></>;
 

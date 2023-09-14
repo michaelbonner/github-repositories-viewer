@@ -12,13 +12,18 @@ export const TokenSetter = () => {
           id="githubToken"
           type="text"
           onChange={(event) => {
-            localStorage.setItem(
-              "githubRepositoriesViewer-accessToken",
-              event.target.value
-            );
+            if (typeof localStorage !== "undefined") {
+              localStorage.setItem(
+                "githubRepositoriesViewer-accessToken",
+                event.target.value
+              );
+            }
           }}
           defaultValue={
-            localStorage.getItem("githubRepositoriesViewer-accessToken") || ""
+            typeof localStorage !== "undefined"
+              ? localStorage.getItem("githubRepositoriesViewer-accessToken") ||
+                ""
+              : ""
           }
         />
         <p className="text-sm">
