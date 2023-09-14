@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
+
 export const TokenSetter = () => {
+  const [isShowingToken, setIsShowingToken] = useState<boolean>(false);
   return (
     <div>
       <div className="grid gap-2 border mt-8 py-2 px-4">
@@ -9,8 +12,17 @@ export const TokenSetter = () => {
         </label>
         <input
           className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          data-1p-ignore
+          defaultValue={
+            typeof localStorage !== "undefined"
+              ? localStorage.getItem("githubRepositoriesViewer-accessToken") ||
+                ""
+              : ""
+          }
           id="githubToken"
-          type="text"
+          onBlur={() => {
+            setIsShowingToken(false);
+          }}
           onChange={(event) => {
             if (typeof localStorage !== "undefined") {
               localStorage.setItem(
@@ -19,12 +31,10 @@ export const TokenSetter = () => {
               );
             }
           }}
-          defaultValue={
-            typeof localStorage !== "undefined"
-              ? localStorage.getItem("githubRepositoriesViewer-accessToken") ||
-                ""
-              : ""
-          }
+          onFocus={() => {
+            setIsShowingToken(true);
+          }}
+          type={isShowingToken ? "text" : "password"}
         />
         <p className="text-sm">
           Instructions: Generate a token here:{" "}
