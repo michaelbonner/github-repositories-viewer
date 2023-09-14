@@ -116,7 +116,7 @@ export const RepositoriesList = () => {
                 value={filterText}
               />
             </div>
-            <div className="max-w-sm grid ga-p1">
+            <div className="max-w-sm grid">
               <label className="text-sm font-bold" htmlFor="filterText">
                 Include Archived
               </label>
@@ -125,8 +125,8 @@ export const RepositoriesList = () => {
                 setEnabled={setIsIncludingArchived}
               />
             </div>
+            <div>Filtered Repositories: {filteredRepositories.length}</div>
           </div>
-          <div>Filtered Repositories: {filteredRepositories.length}</div>
           <div className="grid gap-4">
             {repositories.map((repository) => {
               const shouldHide = () => {
