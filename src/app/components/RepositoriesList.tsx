@@ -5,6 +5,7 @@ import { GithubRepository } from "@/types/GithubRepository";
 import { useEffect, useState } from "react";
 import { AiFillGithub } from "react-icons/ai";
 import Toggle from "./Toggle";
+import { decrypt } from "../lib/decrypt";
 
 export const RepositoriesList = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -37,8 +38,8 @@ export const RepositoriesList = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       if (typeof localStorage !== "undefined") {
-        const accessToken = localStorage.getItem(
-          "githubRepositoriesViewer-accessToken"
+        const accessToken = decrypt(
+          localStorage.getItem("githubRepositoriesViewer-accessToken") || ""
         );
         if (accessToken) {
           setAccessToken(accessToken);

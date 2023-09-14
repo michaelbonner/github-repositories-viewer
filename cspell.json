@@ -3,7 +3,10 @@
   "ignorePaths": [],
   "dictionaryDefinitions": [],
   "dictionaries": [],
-  "words": [],
+  "words": [
+    "headlessui",
+    "signoff"
+  ],
   "ignoreWords": [],
   "import": []
 }

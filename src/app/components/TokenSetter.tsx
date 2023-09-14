@@ -1,9 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { encrypt } from "../lib/encrypt";
+import { decrypt } from "../lib/decrypt";
 
 export const TokenSetter = () => {
   const [isShowingToken, setIsShowingToken] = useState<boolean>(false);
+
+  const getDefaultTokenValue = () => {
+    if (typeof localStorage === "undefined") return "";
+
+    const localStorageValue = localStorage.getItem(
+      "githubRepositoriesViewer-accessToken"
+    );
+
+    if (!localStorageValue) return "";
+
+    return decrypt(localStorageValue);
+  };
+
   return (
     <div>
       <div className="grid gap-2 border mt-8 py-2 px-4">
@@ -13,12 +28,7 @@ export const TokenSetter = () => {
         <input
           className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           data-1p-ignore
-          defaultValue={
-            typeof localStorage !== "undefined"
-              ? localStorage.getItem("githubRepositoriesViewer-accessToken") ||
-                ""
-              : ""
-          }
+          defaultValue={getDefaultTokenValue()}
           id="githubToken"
           onBlur={() => {
             setIsShowingToken(false);
@@ -27,7 +37,7 @@ export const TokenSetter = () => {
             if (typeof localStorage !== "undefined") {
               localStorage.setItem(
                 "githubRepositoriesViewer-accessToken",
-                event.target.value.trim()
+                encrypt(event.target.value.trim())
               );
             }
           }}
