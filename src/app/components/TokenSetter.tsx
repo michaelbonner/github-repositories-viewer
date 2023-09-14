@@ -35,8 +35,8 @@ export const TokenSetter = () => {
           >
             https://github.com/settings/tokens
           </a>
-          . Make sure you select read access for the repositories you are
-          interested in.
+          . Make sure the token has enough access to read your repositories and
+          their collaborators.
         </p>
       </div>
     </div>
