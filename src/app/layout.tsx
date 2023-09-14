@@ -18,7 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         {children}
-        <footer className="text-gray-700 font-light text-center max-w-lg mx-auto">
+        <footer className="text-gray-700 font-light text-center max-w-lg mx-auto pb-12">
           <a
             className="flex items-center justify-center space-x-2 w-full pt-10"
             href="https://bootpackdigital.com/?utm_source=github-repository-viewer"
