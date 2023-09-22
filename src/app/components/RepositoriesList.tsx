@@ -326,7 +326,7 @@ const Repository = ({
                           {pull.user.login}
                         </span>
                         {pull.labels.length > 0 && (
-                          <span className="text-xs">
+                          <span className="text-xs flex flex-wrap gap-1">
                             {pull.labels.map((label) => {
                               return (
                                 <span
