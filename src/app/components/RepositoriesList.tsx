@@ -191,15 +191,23 @@ const Repository = ({
   repository: GithubRepository;
   shouldHide: boolean;
 }) => {
-  const [collaborators, setCollaborators] = useState<GithubCollaborator[]>([]);
-  const [errorText, setErrorText] = useState<string | null>(null);
   const [collaboratorState, setCollaboratorState] = useState<
     "initial" | "loaded" | "error"
   >("initial");
+  const [collaborators, setCollaborators] = useState<GithubCollaborator[]>([]);
+  const [collaboratorsErrorText, setCollaboratorsErrorText] = useState<
+    string | null
+  >(null);
+
+  const [pullsState, setPullsState] = useState<"initial" | "loaded" | "error">(
+    "initial"
+  );
+  const [pulls, setPulls] = useState<GithubPull[]>([]);
+  const [pullsErrorText, setPullsErrorText] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCollaborators = async () => {
-      setErrorText(null);
+      setCollaboratorsErrorText(null);
       const response = await fetch(
         repository.collaborators_url.replace("{/collaborator}", ""),
         {
@@ -215,12 +223,37 @@ const Repository = ({
         setCollaborators(responseData);
       } else {
         setCollaboratorState("error");
-        setErrorText(responseData.message);
+        setCollaboratorsErrorText(responseData.message);
         setCollaborators([]);
       }
     };
     fetchCollaborators();
   }, [accessToken, repository.collaborators_url]);
+
+  useEffect(() => {
+    const fetchPulls = async () => {
+      setPullsErrorText(null);
+      const response = await fetch(
+        repository.pulls_url.replace("{/number}", ""),
+        {
+          headers: {
+            Authorization: `token ${accessToken}`,
+          },
+          cache: "force-cache",
+        }
+      );
+      const responseData = await response.json();
+      if (Array.isArray(responseData)) {
+        setPullsState("loaded");
+        setPulls(responseData);
+      } else {
+        setPullsState("error");
+        setPullsErrorText(responseData.message);
+        setPulls([]);
+      }
+    };
+    fetchPulls();
+  }, [accessToken, repository.pulls_url]);
 
   if (shouldHide) return <></>;
 
@@ -239,30 +272,86 @@ const Repository = ({
           </span>
         </a>
       </h3>
-      <div className="mt-2 flex items-center gap-4">
-        <ul className="flex gap-2 flex-wrap">
-          {collaboratorState === "initial" && <li>Loading...</li>}
-          {collaborators.map((collaborator) => {
-            return (
-              <li key={collaborator.id}>
-                <a
-                  className="flex gap-4 items-center border rounded-md py-2 px-4 hover:bg-gray-100"
-                  href={`https://github.com/${collaborator.login}`}
-                  target="_blank"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    className="rounded-full w-8 h-8"
-                    src={collaborator.avatar_url}
-                    alt={collaborator.login}
-                  />
-                  {collaborator.login}
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-        {errorText && <p className="text-red-700">{errorText}</p>}
+      <div className="ml-6">
+        <div className="mt-2 flex items-center gap-4">
+          <ul className="flex gap-2 flex-wrap">
+            {collaboratorState === "initial" && (
+              <li>Loading collaborators...</li>
+            )}
+            {collaborators.map((collaborator) => {
+              return (
+                <li key={collaborator.id}>
+                  <a
+                    className="flex gap-4 items-center border rounded-md py-2 px-4 hover:bg-gray-100"
+                    href={`https://github.com/${collaborator.login}`}
+                    target="_blank"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      className="rounded-full w-8 h-8"
+                      src={collaborator.avatar_url}
+                      alt={collaborator.login}
+                    />
+                    {collaborator.login}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+          {collaboratorsErrorText && (
+            <p className="text-red-700">{collaboratorsErrorText}</p>
+          )}
+        </div>
+        {pulls.length > 0 && (
+          <div>
+            <h4 className="text-lg font-semibold mt-4 pl-2">Pull Requests</h4>
+            <div className="mt-2 grid gap-4">
+              <ul className="grid lg:grid-cols-2 2xl:grid-cols-3 gap-2 flex-wrap">
+                {pullsState === "initial" && <li>Loading pull requests...</li>}
+                {pulls.map((pull) => {
+                  return (
+                    <li key={pull.id}>
+                      <a
+                        className="grid gap-2 items-center border rounded-md py-2 px-4 hover:bg-gray-100"
+                        href={`https://github.com/${pull.html_url}`}
+                        target="_blank"
+                      >
+                        <span className="text-lg font-semibold">
+                          {pull.title}
+                        </span>
+                        <span className="text-sm text-gray-600">
+                          #{pull.id} opened{" "}
+                          {new Date(pull.created_at).toLocaleDateString()} at{" "}
+                          {new Date(pull.created_at).toLocaleTimeString()} by{" "}
+                          {pull.user.login}
+                        </span>
+                        {pull.labels.length > 0 && (
+                          <span className="text-xs">
+                            {pull.labels.map((label) => {
+                              return (
+                                <span
+                                  key={label.id}
+                                  className="bg-gray-200 rounded-full px-2 py-1 text-xs"
+                                  style={{
+                                    backgroundColor: `#${label.color}`,
+                                    color: "white",
+                                  }}
+                                >
+                                  {label.name}
+                                </span>
+                              );
+                            })}
+                          </span>
+                        )}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        )}
+        {pullsErrorText && <p className="text-red-700">{pullsErrorText}</p>}
       </div>
     </div>
   );
