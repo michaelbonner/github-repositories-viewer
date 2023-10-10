@@ -313,7 +313,7 @@ const Repository = ({
                     <li key={pull.id}>
                       <a
                         className="grid gap-2 items-center border rounded-md py-2 px-4 hover:bg-gray-100"
-                        href={`https://github.com/${pull.html_url}`}
+                        href={pull.html_url}
                         target="_blank"
                       >
                         <span className="text-lg font-semibold">
