@@ -7,7 +7,7 @@ type GithubPull = {
   patch_url: string;
   issue_url: string;
   number: number;
-  state: string;
+  state: "closed" | "open";
   locked: boolean;
   title: string;
   user: {
