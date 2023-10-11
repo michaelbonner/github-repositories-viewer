@@ -59,14 +59,18 @@ export const RepositoriesList = () => {
   const fetchRepositories = async (page: number) => {
     setIsLoadingRepositories(true);
     setErrorText(null);
-    const response = await fetch(
-      `https://api.github.com/user/repos?sort=updated&direction=desc&per_page=100&page=${page}`,
-      {
-        headers: {
-          Authorization: `token ${accessToken}`,
-        },
-      }
-    );
+
+    const repositoriesUrl = new URL("https://api.github.com/user/repos");
+    repositoriesUrl.searchParams.append("sort", "updated");
+    repositoriesUrl.searchParams.append("direction", "desc");
+    repositoriesUrl.searchParams.append("per_page", "50");
+    repositoriesUrl.searchParams.append("page", `${page}`);
+
+    const response = await fetch(repositoriesUrl.href, {
+      headers: {
+        Authorization: `token ${accessToken}`,
+      },
+    });
 
     const responseData = await response.json();
 
@@ -208,15 +212,16 @@ const Repository = ({
   useEffect(() => {
     const fetchCollaborators = async () => {
       setCollaboratorsErrorText(null);
-      const response = await fetch(
-        repository.collaborators_url.replace("{/collaborator}", ""),
-        {
-          headers: {
-            Authorization: `token ${accessToken}`,
-          },
-          cache: "force-cache",
-        }
+
+      const collaboratorsUrl = new URL(
+        repository.collaborators_url.replace("{/collaborator}", "")
       );
+      const response = await fetch(collaboratorsUrl.href, {
+        headers: {
+          Authorization: `token ${accessToken}`,
+        },
+        cache: "force-cache",
+      });
       const responseData = await response.json();
       if (Array.isArray(responseData)) {
         setCollaboratorState("loaded");
@@ -233,15 +238,17 @@ const Repository = ({
   useEffect(() => {
     const fetchPulls = async () => {
       setPullsErrorText(null);
-      const response = await fetch(
-        repository.pulls_url.replace("{/number}", ""),
-        {
-          headers: {
-            Authorization: `token ${accessToken}`,
-          },
-          cache: "force-cache",
-        }
-      );
+
+      const pullUrl = new URL(repository.pulls_url.replace("{/number}", ""));
+      pullUrl.searchParams.append("state", "open");
+      pullUrl.searchParams.append("per_page", "100");
+
+      const response = await fetch(pullUrl.href, {
+        headers: {
+          Authorization: `token ${accessToken}`,
+        },
+        cache: "force-cache",
+      });
       const responseData = await response.json();
       if (Array.isArray(responseData)) {
         setPullsState("loaded");
