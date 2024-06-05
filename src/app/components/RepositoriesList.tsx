@@ -99,20 +99,20 @@ export const RepositoriesList = () => {
     }
 
     if (response.headers.get("Link")?.includes(`rel="next"`)) {
-      // fetchRepositories(page + 1);
+      fetchRepositories(page + 1);
     }
   };
 
   return (
     <div className="grid gap-8 border mt-8 py-2 px-4">
-      <div className="flex gap-4 items-center">
+      <div className="grid sm:flex flex-wrap gap-4 items-center">
         <h2>
           Repositories List{" "}
           {repositories.length > 0 && <>({repositories.length})</>}
         </h2>
         <div>
           <button
-            className="bg-slate-900 text-white py-1 px-3 rounded-md"
+            className="bg-slate-900 text-white py-1 px-3 rounded-md w-full"
             onClick={(e) => {
               e.preventDefault();
               fetchRepositories(1);
@@ -123,7 +123,7 @@ export const RepositoriesList = () => {
         </div>
       </div>
       {(repositories.length > 0 || isLoadingRepositories) && (
-        <div className="flex gap-4">
+        <div className="grid sm:flex flex-wrap gap-4">
           <div className="max-w-sm">
             <label className="text-sm font-bold" htmlFor="filterText">
               Search
@@ -266,20 +266,22 @@ const Repository = ({
 
   return (
     <div className="hover:bg-gray-50 -mx-4 px-4 py-4">
-      <h3 className="text-xl font-bold">
+      <h3 className="text-lg sm:text-xl font-bold break-words">
         <a
-          className="inline-flex items-center gap-2"
+          className="inline-flex items-center gap-2 w-full overflow-auto"
           href={repository.html_url}
           target="_blank"
           rel="noreferrer"
         >
           <AiFillGithub />
-          <span>
-            {repository.owner.login}/{repository.name}
+          <span className="break-words">
+            {repository.owner.login}/
+            <wbr />
+            {repository.name}
           </span>
         </a>
       </h3>
-      <div className="ml-6">
+      <div className="sm:ml-6">
         <div className="mt-2 flex items-center gap-4">
           <ul className="flex gap-2 flex-wrap">
             {collaboratorState === "initial" && (
@@ -289,13 +291,13 @@ const Repository = ({
               return (
                 <li key={collaborator.id}>
                   <a
-                    className="flex gap-4 items-center border rounded-md py-2 px-4 hover:bg-gray-100"
+                    className="flex gap-2 sm:gap-4 items-center border rounded-md py-1 sm:py-2 px-2 sm:px-4 hover:bg-gray-100"
                     href={`https://github.com/${collaborator.login}`}
                     target="_blank"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      className="rounded-full w-8 h-8"
+                      className="rounded-full w-5 sm:w-8 h-5 sm:h-8"
                       src={collaborator.avatar_url}
                       alt={collaborator.login}
                     />
@@ -311,7 +313,9 @@ const Repository = ({
         </div>
         {pulls.length > 0 && (
           <div>
-            <h4 className="text-lg font-semibold mt-4 pl-2">Pull Requests</h4>
+            <h4 className="sm:text-lg font-semibold mt-4 pl-2">
+              Pull Requests
+            </h4>
             <div className="mt-2 grid gap-4">
               <ul className="grid lg:grid-cols-2 2xl:grid-cols-3 gap-2 flex-wrap">
                 {pullsState === "initial" && <li>Loading pull requests...</li>}
@@ -323,7 +327,7 @@ const Repository = ({
                         href={pull.html_url}
                         target="_blank"
                       >
-                        <span className="text-lg font-semibold">
+                        <span className="sm:text-lg font-semibold">
                           {pull.title}
                         </span>
                         <span className="text-sm text-gray-600">
@@ -367,15 +371,15 @@ const Repository = ({
 const LoadingRepositorySkeleton = () => {
   return (
     <div className="grid gap-4">
-      <div className="flex gap-3 items-center">
-        <div className="bg-gray-200 animate-pulse rounded-full w-6 h-6"></div>
-        <div className="flex items-center gap-2">
+      <div className="flex gap-1 sm:gap-3 items-center">
+        <div className="bg-gray-200 animate-pulse rounded-full w-6 h-6 shrink-0"></div>
+        <div className="flex flex-wrap items-center gap-2">
           <div className="bg-gray-200 animate-pulse rounded-full w-48 h-5"></div>
           <div>/</div>
           <div className="bg-gray-200 animate-pulse rounded-full w-48 h-5"></div>
         </div>
       </div>
-      <div className="flex gap-3 items-center">
+      <div className="flex flex-wrap gap-3 items-center">
         <div className="bg-gray-200 animate-pulse rounded-md w-48 h-10"></div>
       </div>
     </div>
