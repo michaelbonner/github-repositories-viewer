@@ -99,7 +99,7 @@ export const RepositoriesList = () => {
     }
 
     if (response.headers.get("Link")?.includes(`rel="next"`)) {
-      fetchRepositories(page + 1);
+      // fetchRepositories(page + 1);
     }
   };
 
