@@ -53,7 +53,7 @@ export const RepositoriesList = () => {
   }, []);
 
   if (!accessToken) {
-    return <div className="mt-8 py-2 px-4 text-orange-600"></div>;
+    return <div className="py-2 px-4 mt-8 text-orange-600"></div>;
   }
 
   const fetchRepositories = async (page: number) => {
@@ -104,15 +104,15 @@ export const RepositoriesList = () => {
   };
 
   return (
-    <div className="grid gap-8 border mt-8 py-2 px-4">
-      <div className="grid sm:flex flex-wrap gap-4 items-center">
+    <div className="grid gap-8 py-2 px-4 mt-8 border">
+      <div className="grid flex-wrap gap-4 items-center sm:flex">
         <h2>
           Repositories List{" "}
           {repositories.length > 0 && <>({repositories.length})</>}
         </h2>
         <div>
           <button
-            className="bg-slate-900 text-white py-1 px-3 rounded-md w-full"
+            className="py-1 px-3 w-full text-white rounded-md bg-slate-900"
             onClick={(e) => {
               e.preventDefault();
               fetchRepositories(1);
@@ -123,13 +123,13 @@ export const RepositoriesList = () => {
         </div>
       </div>
       {(repositories.length > 0 || isLoadingRepositories) && (
-        <div className="grid sm:flex flex-wrap gap-4">
+        <div className="grid flex-wrap gap-4 sm:flex">
           <div className="max-w-sm">
             <label className="text-sm font-bold" htmlFor="filterText">
               Search
             </label>
             <input
-              className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="py-2 px-3 w-full leading-tight text-gray-700 rounded border appearance-none focus:outline-none focus:shadow-outline"
               id="filterText"
               type="text"
               onChange={(event) => {
@@ -138,7 +138,7 @@ export const RepositoriesList = () => {
               value={filterText}
             />
           </div>
-          <div className="max-w-sm grid">
+          <div className="grid max-w-sm">
             <label className="text-sm font-bold" htmlFor="filterText">
               Include Archived
             </label>
@@ -265,10 +265,10 @@ const Repository = ({
   if (shouldHide) return <></>;
 
   return (
-    <div className="hover:bg-gray-50 -mx-4 px-4 py-4">
-      <h3 className="text-lg sm:text-xl font-bold break-words">
+    <div className="py-4 px-4 -mx-4 hover:bg-gray-50">
+      <h3 className="text-lg font-bold break-words sm:text-xl">
         <a
-          className="inline-flex items-center gap-2 w-full overflow-auto"
+          className="inline-flex overflow-auto gap-2 items-center w-full"
           href={repository.html_url}
           target="_blank"
           rel="noreferrer"
@@ -282,8 +282,8 @@ const Repository = ({
         </a>
       </h3>
       <div className="sm:ml-6">
-        <div className="mt-2 flex items-center gap-4">
-          <ul className="flex gap-2 flex-wrap">
+        <div className="flex gap-4 items-center mt-2">
+          <ul className="flex flex-wrap gap-2">
             {collaboratorState === "initial" && (
               <li>Loading collaborators...</li>
             )}
@@ -291,13 +291,13 @@ const Repository = ({
               return (
                 <li key={collaborator.id}>
                   <a
-                    className="flex gap-2 sm:gap-4 items-center border rounded-md py-1 sm:py-2 px-2 sm:px-4 hover:bg-gray-100"
+                    className="flex gap-2 items-center py-1 px-2 rounded-md border sm:gap-4 sm:py-2 sm:px-4 hover:bg-gray-100"
                     href={`https://github.com/${collaborator.login}`}
                     target="_blank"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      className="rounded-full w-5 sm:w-8 h-5 sm:h-8"
+                      className="w-5 h-5 rounded-full sm:w-8 sm:h-8"
                       src={collaborator.avatar_url}
                       alt={collaborator.login}
                     />
@@ -313,21 +313,21 @@ const Repository = ({
         </div>
         {pulls.length > 0 && (
           <div>
-            <h4 className="sm:text-lg font-semibold mt-4 pl-2">
+            <h4 className="pl-2 mt-4 font-semibold sm:text-lg">
               Pull Requests
             </h4>
-            <div className="mt-2 grid gap-4">
-              <ul className="grid lg:grid-cols-2 2xl:grid-cols-3 gap-2 flex-wrap">
+            <div className="grid gap-4 mt-2">
+              <ul className="grid flex-wrap gap-2 lg:grid-cols-2 2xl:grid-cols-3">
                 {pullsState === "initial" && <li>Loading pull requests...</li>}
                 {pulls.map((pull) => {
                   return (
                     <li key={pull.id}>
                       <a
-                        className="grid gap-2 items-center border rounded-md py-2 px-4 hover:bg-gray-100"
+                        className="grid gap-2 items-center py-2 px-4 rounded-md border hover:bg-gray-100"
                         href={pull.html_url}
                         target="_blank"
                       >
-                        <span className="sm:text-lg font-semibold">
+                        <span className="font-semibold sm:text-lg">
                           {pull.title}
                         </span>
                         <span className="text-sm text-gray-600">
@@ -337,12 +337,12 @@ const Repository = ({
                           {pull.user.login}
                         </span>
                         {pull.labels.length > 0 && (
-                          <span className="text-xs flex flex-wrap gap-1">
+                          <span className="flex flex-wrap gap-1 text-xs">
                             {pull.labels.map((label) => {
                               return (
                                 <span
                                   key={label.id}
-                                  className="bg-gray-200 rounded-full px-2 py-1 text-xs"
+                                  className="py-1 px-2 text-xs bg-gray-200 rounded-full"
                                   style={{
                                     backgroundColor: `#${label.color}`,
                                     color: "white",
@@ -371,16 +371,16 @@ const Repository = ({
 const LoadingRepositorySkeleton = () => {
   return (
     <div className="grid gap-4">
-      <div className="flex gap-1 sm:gap-3 items-center">
-        <div className="bg-gray-200 animate-pulse rounded-full w-6 h-6 shrink-0"></div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="bg-gray-200 animate-pulse rounded-full w-48 h-5"></div>
+      <div className="flex gap-1 items-center sm:gap-3">
+        <div className="w-6 h-6 bg-gray-200 rounded-full animate-pulse shrink-0"></div>
+        <div className="flex flex-wrap gap-2 items-center">
+          <div className="w-48 h-5 bg-gray-200 rounded-full animate-pulse"></div>
           <div>/</div>
-          <div className="bg-gray-200 animate-pulse rounded-full w-48 h-5"></div>
+          <div className="w-48 h-5 bg-gray-200 rounded-full animate-pulse"></div>
         </div>
       </div>
       <div className="flex flex-wrap gap-3 items-center">
-        <div className="bg-gray-200 animate-pulse rounded-md w-48 h-10"></div>
+        <div className="w-48 h-10 bg-gray-200 rounded-md animate-pulse"></div>
       </div>
     </div>
   );

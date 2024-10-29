@@ -21,12 +21,12 @@ export const TokenSetter = () => {
 
   return (
     <div>
-      <div className="grid gap-2 border mt-8 py-2 px-4">
+      <div className="grid gap-2 py-2 px-4 mt-8 border">
         <label className="text-sm font-bold" htmlFor="githubToken">
           Github access token
         </label>
         <input
-          className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          className="py-2 px-3 w-full leading-tight text-gray-700 rounded border appearance-none focus:outline-none focus:shadow-outline"
           data-1p-ignore
           defaultValue={getDefaultTokenValue()}
           id="githubToken"

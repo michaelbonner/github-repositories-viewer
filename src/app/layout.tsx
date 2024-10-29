@@ -18,9 +18,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         {children}
-        <footer className="text-gray-700 font-light text-center max-w-lg mx-auto pb-12">
+        <footer className="pb-12 mx-auto max-w-lg font-light text-center text-gray-700">
           <a
-            className="flex items-center justify-center space-x-2 w-full pt-10"
+            className="flex justify-center items-center pt-10 space-x-2 w-full"
             href="https://bootpackdigital.com/?utm_source=github-repository-viewer"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -42,7 +42,7 @@ export default function RootLayout({
               Bootpack Digital
             </a>
           </p>
-          <p className="block mt-2 text-sm mt-4">
+          <p className="block mt-2 mt-4 text-sm">
             <span className="text-xs">&copy;</span>
             {new Date().getFullYear()} Bootpack Digital, LLC
           </p>
