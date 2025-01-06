@@ -42,9 +42,9 @@ export default function RootLayout({
               Bootpack Digital
             </a>
           </p>
-          <p className="block mt-2 mt-4 text-sm">
+          <p className="block mt-2 text-sm">
             <span className="text-xs">&copy;</span>
-            {new Date().getFullYear()} Bootpack Digital, LLC
+            2023-{new Date().getFullYear()} Bootpack Digital, LLC
           </p>
         </footer>
       </body>
