@@ -52,6 +52,7 @@ export const TokenSetter = () => {
             className="underline"
             href="https://github.com/settings/tokens"
             target="_blank"
+            rel="noopener noreferrer"
           >
             https://github.com/settings/tokens
           </a>
