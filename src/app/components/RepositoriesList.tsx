@@ -17,6 +17,10 @@ export const RepositoriesList = () => {
   const [filterText, setFilterText] = useState<string>("");
   const [isIncludingArchived, setIsIncludingArchived] =
     useState<boolean>(false);
+  const [
+    isRepositoriesWithPullRequestsOnly,
+    setIsRepositoriesWithPullRequestsOnly,
+  ] = useState<boolean>(false);
   const [isLoadingRepositories, setIsLoadingRepositories] =
     useState<boolean>(false);
 
@@ -34,8 +38,19 @@ export const RepositoriesList = () => {
 
           return true;
         })
+        .filter((repository) => {
+          if (isRepositoriesWithPullRequestsOnly) {
+            return repository.open_issues_count > 0;
+          }
+          return true;
+        })
     );
-  }, [filterText, isIncludingArchived, repositories]);
+  }, [
+    filterText,
+    isIncludingArchived,
+    repositories,
+    isRepositoriesWithPullRequestsOnly,
+  ]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -147,6 +162,15 @@ export const RepositoriesList = () => {
               setEnabled={setIsIncludingArchived}
             />
           </div>
+          <div className="grid max-w-sm">
+            <label className="text-sm font-bold" htmlFor="filterText">
+              Repositories with Pull Requests Only
+            </label>
+            <Toggle
+              enabled={isRepositoriesWithPullRequestsOnly}
+              setEnabled={setIsRepositoriesWithPullRequestsOnly}
+            />
+          </div>
           <div>Filtered Repositories: {filteredRepositories.length}</div>
         </div>
       )}
@@ -162,19 +186,29 @@ export const RepositoriesList = () => {
       {repositories.length > 0 && (
         <>
           <div className="grid gap-4">
-            {repositories.map((repository) => {
-              const shouldHide = () => {
+            {repositories.map((repo) => {
+              const shouldHide = (pulls: GithubPull[]) => {
+                const hideBasedOnPullRequests =
+                  isRepositoriesWithPullRequestsOnly
+                    ? pulls.length === 0
+                    : false;
+
                 // if this repository is already in the filtered list, hide it
-                return !filteredRepositories.find(
-                  (r) => r.full_name === repository.full_name
+                const hideBasedOnFilteredRepositories =
+                  !filteredRepositories.find(
+                    (r) => r.full_name === repo.full_name
+                  );
+
+                return (
+                  hideBasedOnPullRequests || hideBasedOnFilteredRepositories
                 );
               };
               return (
                 <Repository
                   accessToken={accessToken}
-                  key={repository.id}
-                  repository={repository}
-                  shouldHide={shouldHide()}
+                  key={repo.id}
+                  repository={repo}
+                  shouldHide={shouldHide}
                 />
               );
             })}
@@ -193,7 +227,7 @@ const Repository = ({
 }: {
   accessToken: string | null;
   repository: GithubRepository;
-  shouldHide: boolean;
+  shouldHide: (pulls: GithubPull[]) => boolean;
 }) => {
   const [collaboratorState, setCollaboratorState] = useState<
     "initial" | "loaded" | "error"
@@ -262,7 +296,7 @@ const Repository = ({
     fetchPulls();
   }, [accessToken, repository.pulls_url]);
 
-  if (shouldHide) return <></>;
+  if (shouldHide(pulls)) return <></>;
 
   return (
     <div className="py-4 px-4 -mx-4 hover:bg-gray-50">
