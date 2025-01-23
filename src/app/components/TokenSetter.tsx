@@ -26,7 +26,7 @@ export const TokenSetter = () => {
           Github access token
         </label>
         <input
-          className="py-2 px-3 w-full leading-tight text-gray-700 rounded border appearance-none focus:outline-none focus:shadow-outline"
+          className="py-2 px-3 w-full leading-tight text-gray-700 rounded-sm border appearance-none focus:outline-hidden focus:shadow-outline"
           data-1p-ignore
           defaultValue={getDefaultTokenValue()}
           id="githubToken"
