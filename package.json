@@ -15,8 +15,8 @@
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@tailwindcss/postcss": "^4.0.6",
-    "@types/node": "^22.13.2",
-    "@types/react": "^19.0.8",
+    "@types/node": "^22.13.4",
+    "@types/react": "^19.0.9",
     "@types/react-dom": "^19.0.3",
     "crypto-js": "^4.2.0",
     "eslint-config-next": "^15.1.7",
