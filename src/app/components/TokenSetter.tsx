@@ -44,21 +44,27 @@ export const TokenSetter = () => {
           onFocus={() => {
             setIsShowingToken(true);
           }}
+          placeholder="ghp_..."
           type={isShowingToken ? "text" : "password"}
         />
-        <p className="text-sm">
-          Instructions: Generate a token here:{" "}
-          <a
-            className="underline"
-            href="https://github.com/settings/tokens"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            https://github.com/settings/tokens
-          </a>
-          . Make sure the token has enough access to read your repositories and
-          their collaborators.
-        </p>
+        <div className="text-sm p-4">
+          <p className="font-semibold">Instructions</p>
+          <ol className="list-decimal list-inside ml-2">
+            <li>
+              <a
+                className="underline"
+                href="https://github.com/settings/tokens/new?description=Repositories%20Viewer&scopes=repo&default_expires_at=none"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Generate a token
+              </a>
+              . Make sure the token has enough access to read your repositories
+              and their collaborators.
+            </li>
+            <li>Copy the token and paste it into the input field above.</li>
+          </ol>
+        </div>
       </div>
     </div>
   );
