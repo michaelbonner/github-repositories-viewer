@@ -164,7 +164,7 @@ export const RepositoriesList = () => {
           </div>
           <div className="grid max-w-sm">
             <label className="text-sm font-bold" htmlFor="filterText">
-              Repositories with Pull Requests Only
+              With Open Pull Requests Only
             </label>
             <Toggle
               enabled={isRepositoriesWithPullRequestsOnly}
