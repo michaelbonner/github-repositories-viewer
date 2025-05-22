@@ -16,7 +16,7 @@
     "@headlessui/react": "^2.2.4",
     "@tailwindcss/postcss": "^4.1.7",
     "@types/node": "^22.15.21",
-    "@types/react": "^19.1.4",
+    "@types/react": "^19.1.5",
     "@types/react-dom": "^19.1.5",
     "crypto-js": "^4.2.0",
     "eslint-config-next": "^15.3.2",
