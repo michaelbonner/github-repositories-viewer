@@ -9,3 +9,9 @@ First, run the development server:
 ```bash
 npm run dev
 ```
+
+## Need some dev help?
+
+Reach out to use at https://bootpackdigital.com. We're always happy to chat about projects and see if we can help.
+
+<a href="https://bootpackdigital.com"><img src="https://bootpackdigital.com/og-image.jpg" alt="Bootpack Digital" /></a>
