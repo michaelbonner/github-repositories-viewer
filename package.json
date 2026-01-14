@@ -15,7 +15,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.9",
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/react": "^19.2.7",
+    "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "crypto-js": "^4.2.0",
     "eslint-config-next": "^16.1.1",
@@ -29,6 +29,6 @@
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.17"
   }
 }
