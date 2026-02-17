@@ -4,6 +4,8 @@ import { useState } from "react";
 import { encrypt } from "../lib/encrypt";
 import { decrypt } from "../lib/decrypt";
 
+const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
+
 export const TokenSetter = () => {
   const [isShowingToken, setIsShowingToken] = useState<boolean>(false);
 
@@ -19,9 +21,73 @@ export const TokenSetter = () => {
     return decrypt(localStorageValue);
   };
 
+  const getAuthMethod = () => {
+    if (typeof localStorage === "undefined") return null;
+    return localStorage.getItem("githubRepositoriesViewer-authMethod");
+  };
+
+  const hasToken = () => {
+    if (typeof localStorage === "undefined") return false;
+    return !!localStorage.getItem("githubRepositoriesViewer-accessToken");
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem("githubRepositoriesViewer-accessToken");
+    localStorage.removeItem("githubRepositoriesViewer-authMethod");
+    window.location.reload();
+  };
+
+  const handleOAuthSignIn = () => {
+    if (!GITHUB_CLIENT_ID) return;
+
+    const params = new URLSearchParams({
+      client_id: GITHUB_CLIENT_ID,
+      scope: "repo",
+      redirect_uri: `${window.location.origin}/auth/callback`,
+    });
+
+    window.location.href = `https://github.com/login/oauth/authorize?${params}`;
+  };
+
+  const isOAuth = getAuthMethod() === "oauth";
+  const isSignedIn = hasToken();
+
+  if (isOAuth && isSignedIn) {
+    return (
+      <div className="grid gap-2 py-2 px-4 mt-8 border">
+        <div className="flex items-center justify-between">
+          <p className="text-sm">
+            Signed in with GitHub OAuth
+          </p>
+          <button
+            className="py-1 px-3 text-sm text-red-700 rounded-md border border-red-700 hover:bg-red-50"
+            onClick={handleSignOut}
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="grid gap-2 py-2 px-4 mt-8 border">
+        {GITHUB_CLIENT_ID && (
+          <div className="grid gap-2">
+            <button
+              className="flex items-center justify-center gap-2 py-2 px-4 w-full text-white rounded-md bg-slate-900 hover:bg-slate-800"
+              onClick={handleOAuthSignIn}
+            >
+              Sign in with GitHub
+            </button>
+            <div className="flex items-center gap-4 my-2">
+              <hr className="flex-1" />
+              <span className="text-sm text-gray-500">or use a personal access token</span>
+              <hr className="flex-1" />
+            </div>
+          </div>
+        )}
         <label className="text-sm font-bold" htmlFor="githubToken">
           Github access token
         </label>
@@ -39,6 +105,7 @@ export const TokenSetter = () => {
                 "githubRepositoriesViewer-accessToken",
                 encrypt(event.target.value.trim())
               );
+              localStorage.removeItem("githubRepositoriesViewer-authMethod");
             }
           }}
           onFocus={() => {
@@ -65,6 +132,16 @@ export const TokenSetter = () => {
             <li>Copy the token and paste it into the input field above.</li>
           </ol>
         </div>
+        {isSignedIn && (
+          <div className="flex justify-end pb-2">
+            <button
+              className="py-1 px-3 text-sm text-red-700 rounded-md border border-red-700 hover:bg-red-50"
+              onClick={handleSignOut}
+            >
+              Sign out
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
