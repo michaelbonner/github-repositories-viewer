@@ -17,23 +17,43 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const tokenResponse = await fetch(
-    "https://github.com/login/oauth/access_token",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
-        code,
-      }),
-    }
-  );
+  let tokenResponse: Response;
+  let tokenData: Record<string, string>;
 
-  const tokenData = await tokenResponse.json();
+  try {
+    tokenResponse = await fetch(
+      "https://github.com/login/oauth/access_token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+        }),
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+  } catch (err) {
+    console.error("GitHub token exchange fetch failed:", err);
+    return NextResponse.json(
+      { error: "Failed to reach GitHub OAuth endpoint" },
+      { status: 502 }
+    );
+  }
+
+  try {
+    tokenData = await tokenResponse.json();
+  } catch (err) {
+    console.error("Failed to parse GitHub token response as JSON:", err);
+    return NextResponse.json(
+      { error: "Invalid response from GitHub OAuth endpoint" },
+      { status: 502 }
+    );
+  }
 
   if (tokenData.error) {
     return NextResponse.json(
