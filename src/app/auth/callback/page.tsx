@@ -71,6 +71,7 @@ export default function AuthCallback() {
       </h1>
       <div className="py-4 px-4 mt-8 border">
         {status === "loading" && <p>Signing in with GitHub...</p>}
+        {status === "success" && <p>Signed in! Redirecting&hellip;</p>}
         {status === "error" && (
           <div>
             <p className="text-red-700">{errorMessage}</p>
