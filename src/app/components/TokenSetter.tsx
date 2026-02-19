@@ -40,10 +40,14 @@ export const TokenSetter = () => {
   const handleOAuthSignIn = () => {
     if (!GITHUB_CLIENT_ID) return;
 
+    const state = crypto.randomUUID();
+    sessionStorage.setItem("githubRepositoriesViewer-oauthState", state);
+
     const params = new URLSearchParams({
       client_id: GITHUB_CLIENT_ID,
       scope: "repo",
       redirect_uri: `${window.location.origin}/auth/callback`,
+      state,
     });
 
     window.location.href = `https://github.com/login/oauth/authorize?${params}`;
