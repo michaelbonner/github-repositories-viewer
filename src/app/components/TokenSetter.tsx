@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { encrypt } from "../lib/encrypt";
 import { decrypt } from "../lib/decrypt";
 
@@ -8,6 +8,13 @@ const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
 
 export const TokenSetter = () => {
   const [isShowingToken, setIsShowingToken] = useState<boolean>(false);
+  const [isOAuth, setIsOAuth] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  useEffect(() => {
+    setIsOAuth(getAuthMethod() === "oauth");
+    setIsSignedIn(hasToken());
+  }, []);
 
   const getDefaultTokenValue = () => {
     if (typeof localStorage === "undefined") return "";
@@ -52,9 +59,6 @@ export const TokenSetter = () => {
 
     window.location.href = `https://github.com/login/oauth/authorize?${params}`;
   };
-
-  const isOAuth = getAuthMethod() === "oauth";
-  const isSignedIn = hasToken();
 
   if (isOAuth && isSignedIn) {
     return (
