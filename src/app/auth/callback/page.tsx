@@ -5,7 +5,7 @@ import { encrypt } from "../../lib/encrypt";
 
 export default function AuthCallback() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
+    "loading",
   );
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -17,7 +17,7 @@ export default function AuthCallback() {
     if (error) {
       setStatus("error");
       setErrorMessage(
-        params.get("error_description") || "Authorization was denied"
+        params.get("error_description") || "Authorization was denied",
       );
       return;
     }
@@ -29,7 +29,7 @@ export default function AuthCallback() {
     }
 
     const storedState = sessionStorage.getItem(
-      "githubRepositoriesViewer-oauthState"
+      "githubRepositoriesViewer-oauthState",
     );
     const returnedState = params.get("state");
     sessionStorage.removeItem("githubRepositoriesViewer-oauthState");
@@ -59,12 +59,9 @@ export default function AuthCallback() {
 
         localStorage.setItem(
           "githubRepositoriesViewer-accessToken",
-          encrypt(data.access_token)
+          encrypt(data.access_token),
         );
-        localStorage.setItem(
-          "githubRepositoriesViewer-authMethod",
-          "oauth"
-        );
+        localStorage.setItem("githubRepositoriesViewer-authMethod", "oauth");
 
         setStatus("success");
         window.location.href = "/";

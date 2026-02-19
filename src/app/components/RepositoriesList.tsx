@@ -4,8 +4,8 @@ import { GithubCollaborator } from "@/types/GithubCollaborator";
 import { GithubRepository } from "@/types/GithubRepository";
 import { useEffect, useState } from "react";
 import { AiFillGithub } from "react-icons/ai";
-import Toggle from "./Toggle";
 import { decrypt } from "../lib/decrypt";
+import Toggle from "./Toggle";
 
 export const RepositoriesList = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export const RepositoriesList = () => {
             return repository.open_issues_count > 0;
           }
           return true;
-        })
+        }),
     );
   }, [
     filterText,
@@ -56,7 +56,7 @@ export const RepositoriesList = () => {
     const interval = setInterval(() => {
       if (typeof localStorage !== "undefined") {
         const accessToken = decrypt(
-          localStorage.getItem("githubRepositoriesViewer-accessToken") || ""
+          localStorage.getItem("githubRepositoriesViewer-accessToken") || "",
         );
         if (accessToken) {
           setAccessToken(accessToken);
@@ -95,7 +95,7 @@ export const RepositoriesList = () => {
       setRepositories((r) =>
         [...r, ...responseData].reduce((acc, current) => {
           const x = acc.find(
-            (item: GithubRepository) => item.id === current.id
+            (item: GithubRepository) => item.id === current.id,
           );
 
           if (!x) {
@@ -103,12 +103,12 @@ export const RepositoriesList = () => {
           } else {
             return acc;
           }
-        }, [])
+        }, []),
       );
     } else {
       setErrorText(
         responseData?.message ||
-          "An unexpected error occurred. Double check your access token and try again."
+          "An unexpected error occurred. Double check your access token and try again.",
       );
       setRepositories([]);
     }
@@ -196,7 +196,7 @@ export const RepositoriesList = () => {
                 // if this repository is already in the filtered list, hide it
                 const hideBasedOnFilteredRepositories =
                   !filteredRepositories.find(
-                    (r) => r.full_name === repo.full_name
+                    (r) => r.full_name === repo.full_name,
                   );
 
                 return (
@@ -238,7 +238,7 @@ const Repository = ({
   >(null);
 
   const [pullsState, setPullsState] = useState<"initial" | "loaded" | "error">(
-    "initial"
+    "initial",
   );
   const [pulls, setPulls] = useState<GithubPull[]>([]);
   const [pullsErrorText, setPullsErrorText] = useState<string | null>(null);
@@ -248,7 +248,7 @@ const Repository = ({
       setCollaboratorsErrorText(null);
 
       const collaboratorsUrl = new URL(
-        repository.collaborators_url.replace("{/collaborator}", "")
+        repository.collaborators_url.replace("{/collaborator}", ""),
       );
       const response = await fetch(collaboratorsUrl.href, {
         headers: {
@@ -300,7 +300,7 @@ const Repository = ({
 
   return (
     <div className="py-4 px-4 -mx-4 hover:bg-gray-50">
-      <h3 className="text-lg font-bold break-words sm:text-xl">
+      <h3 className="text-lg font-bold wrap-break-word sm:text-xl">
         <a
           className="inline-flex overflow-auto gap-2 items-center w-full"
           href={repository.html_url}
@@ -308,7 +308,7 @@ const Repository = ({
           rel="noreferrer"
         >
           <AiFillGithub />
-          <span className="break-words">
+          <span className="wrap-break-word">
             {repository.owner.login}/
             <wbr />
             {repository.name}

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { encrypt } from "../lib/encrypt";
 import { decrypt } from "../lib/decrypt";
+import { encrypt } from "../lib/encrypt";
 
 const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
 
@@ -20,7 +20,7 @@ export const TokenSetter = () => {
     if (typeof localStorage === "undefined") return "";
 
     const localStorageValue = localStorage.getItem(
-      "githubRepositoriesViewer-accessToken"
+      "githubRepositoriesViewer-accessToken",
     );
 
     if (!localStorageValue) return "";
@@ -64,9 +64,7 @@ export const TokenSetter = () => {
     return (
       <div className="grid gap-2 py-2 px-4 mt-8 border">
         <div className="flex items-center justify-between">
-          <p className="text-sm">
-            Signed in with GitHub OAuth
-          </p>
+          <p className="text-sm">Signed in with GitHub OAuth</p>
           <button
             className="py-1 px-3 text-sm text-red-700 rounded-md border border-red-700 hover:bg-red-50"
             onClick={handleSignOut}
@@ -91,7 +89,9 @@ export const TokenSetter = () => {
             </button>
             <div className="flex items-center gap-4 my-2">
               <hr className="flex-1" />
-              <span className="text-sm text-gray-500">or use a personal access token</span>
+              <span className="text-sm text-gray-500">
+                or use a personal access token
+              </span>
               <hr className="flex-1" />
             </div>
           </div>
@@ -111,7 +111,7 @@ export const TokenSetter = () => {
             if (typeof localStorage !== "undefined") {
               localStorage.setItem(
                 "githubRepositoriesViewer-accessToken",
-                encrypt(event.target.value.trim())
+                encrypt(event.target.value.trim()),
               );
               localStorage.removeItem("githubRepositoriesViewer-authMethod");
             }
