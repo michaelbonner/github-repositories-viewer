@@ -28,6 +28,19 @@ export default function AuthCallback() {
       return;
     }
 
+    const storedState = sessionStorage.getItem(
+      "githubRepositoriesViewer-oauthState"
+    );
+    const returnedState = params.get("state");
+    sessionStorage.removeItem("githubRepositoriesViewer-oauthState");
+
+    if (!storedState || storedState !== returnedState) {
+      console.error("OAuth state mismatch — possible CSRF attempt");
+      setStatus("error");
+      setErrorMessage("Authentication failed: invalid state parameter");
+      return;
+    }
+
     const exchangeCode = async () => {
       try {
         const response = await fetch("/api/auth/github", {
