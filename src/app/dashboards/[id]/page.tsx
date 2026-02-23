@@ -48,6 +48,10 @@ function formatDate(iso: string) {
   });
 }
 
+function getRepoUrl(repoFullName: string) {
+  return `https://github.com/${repoFullName}`;
+}
+
 function StateBadge({ state, mergedAt }: { state: string; mergedAt?: string | null }) {
   const isMerged = mergedAt != null;
   const label = isMerged ? "merged" : state;
@@ -72,15 +76,24 @@ function RepoSection({ repo }: { repo: RepoActivity }) {
 
   return (
     <div className="border rounded-md">
-      <button
-        className="flex justify-between items-center w-full px-4 py-3 text-left hover:bg-gray-50"
-        onClick={() => setOpen((o) => !o)}
-      >
-        <span className="font-semibold">{repo.repoFullName}</span>
-        <span className="text-sm text-gray-500">
+      <div className="flex justify-between items-center px-4 py-3">
+        <a
+          href={getRepoUrl(repo.repoFullName)}
+          target="_blank"
+          rel="noreferrer"
+          className="font-semibold hover:underline"
+        >
+          {repo.repoFullName}
+        </a>
+        <button
+          className="text-sm text-gray-500 hover:text-gray-700"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label={`Toggle ${repo.repoFullName} activity`}
+        >
           {total} item{total !== 1 ? "s" : ""} {open ? "▲" : "▼"}
-        </span>
-      </button>
+        </button>
+      </div>
 
       {open && (
         <div className="px-4 pb-4 grid gap-6">
@@ -356,7 +369,19 @@ export default function DashboardDetailPage() {
         <p className="text-sm text-gray-500 mt-1">
           {dashboard.repositories.length} repo
           {dashboard.repositories.length !== 1 ? "s" : ""}:{" "}
-          {dashboard.repositories.map((r) => r.repoFullName).join(", ")}
+          {dashboard.repositories.map((r, index) => (
+            <span key={r.id}>
+              <a
+                href={getRepoUrl(r.repoFullName)}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:underline"
+              >
+                {r.repoFullName}
+              </a>
+              {index < dashboard.repositories.length - 1 ? ", " : ""}
+            </span>
+          ))}
         </p>
       </div>
 
