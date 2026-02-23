@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "dashboard_repo_unique_idx" ON "dashboard_repositories" USING btree ("dashboard_id","repo_full_name");--> statement-breakpoint
+CREATE INDEX "dashboard_repositories_dashboard_id_idx" ON "dashboard_repositories" USING btree ("dashboard_id");

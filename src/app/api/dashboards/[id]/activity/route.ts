@@ -85,7 +85,11 @@ export async function GET(req: NextRequest, { params }: Params) {
         ? await issuesRes.json()
         : [];
       const issues = Array.isArray(allIssues)
-        ? allIssues.filter((issue) => !issue.pull_request)
+        ? allIssues.filter(
+            (issue) =>
+              !issue.pull_request &&
+              new Date(issue.updated_at) <= new Date(until),
+          )
         : [];
 
       return {

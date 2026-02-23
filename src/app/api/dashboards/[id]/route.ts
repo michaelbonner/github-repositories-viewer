@@ -66,9 +66,16 @@ export async function PUT(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const body = await req.json();
-  const name: string | undefined = body.name?.trim();
-  const repositories: string[] | undefined = body.repositories;
+  let body: { name?: unknown; repositories?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+  const name: string | undefined = (body.name as string)?.trim();
+  const repositories: string[] | undefined = Array.isArray(body.repositories)
+    ? (body.repositories as string[])
+    : undefined;
 
   const result = await db.transaction(async (tx) => {
     if (name) {
@@ -93,7 +100,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       }
     }
 
-    return db.query.dashboards.findFirst({
+    return tx.query.dashboards.findFirst({
       where: eq(dashboards.id, id),
       with: { repositories: true },
     });

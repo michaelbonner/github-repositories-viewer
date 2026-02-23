@@ -45,9 +45,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 
-  const body = await req.json();
-  const name: string = body.name?.trim();
-  const repositories: string[] = body.repositories ?? [];
+  let body: { name?: unknown; repositories?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+  const name: string = (body.name as string)?.trim();
+  const repositories: string[] = Array.isArray(body.repositories)
+    ? (body.repositories as string[])
+    : [];
 
   if (!name) {
     return NextResponse.json({ error: "name is required" }, { status: 400 });

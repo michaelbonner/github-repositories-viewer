@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { decrypt } from "../../lib/decrypt";
 import Link from "next/link";
+import { Streamdown } from "streamdown";
+import "streamdown/styles.css";
 import type { GithubCommit } from "@/types/GithubCommit";
 import type { GithubIssue } from "@/types/GithubIssue";
 
@@ -422,7 +424,7 @@ export default function DashboardDetailPage() {
             <div className="p-4 border rounded-md bg-gray-50">
               <h2 className="text-lg font-semibold mb-3">AI Summary</h2>
               <div className="prose prose-sm max-w-none">
-                <pre className="whitespace-pre-wrap text-sm font-sans">{summary}</pre>
+                <Streamdown>{summary}</Streamdown>
               </div>
             </div>
           )}

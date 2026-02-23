@@ -82,10 +82,11 @@ export default function DashboardsPage() {
     if (!token) return;
     if (!confirm("Delete this dashboard?")) return;
     try {
-      await fetch(`/api/dashboards/${id}`, {
+      const res = await fetch(`/api/dashboards/${id}`, {
         method: "DELETE",
         headers: { Authorization: `token ${token}` },
       });
+      if (!res.ok) throw new Error("Failed to delete dashboard");
       setDashboards((prev) => prev.filter((d) => d.id !== id));
     } catch {
       alert("Failed to delete dashboard");
