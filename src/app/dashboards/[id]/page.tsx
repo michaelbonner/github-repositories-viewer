@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { decrypt } from "../../lib/decrypt";
 import Link from "next/link";
 import { Streamdown } from "streamdown";
-import "streamdown/styles.css";
 import type { GithubCommit } from "@/types/GithubCommit";
 import type { GithubIssue } from "@/types/GithubIssue";
 
