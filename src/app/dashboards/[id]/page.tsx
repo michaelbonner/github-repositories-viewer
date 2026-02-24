@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { decrypt } from "../../lib/decrypt";
 import Link from "next/link";
@@ -234,6 +234,7 @@ export default function DashboardDetailPage() {
   const [since, setSince] = useState(sevenDaysAgo);
   const [until, setUntil] = useState(today);
   const [activity, setActivity] = useState<ActivityData | null>(null);
+  const [selectedContributor, setSelectedContributor] = useState("");
   const [isLoadingActivity, setIsLoadingActivity] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
@@ -287,6 +288,7 @@ export default function DashboardDetailPage() {
       if (!res.ok) throw new Error("Failed to load activity");
       const data: ActivityData = await res.json();
       setActivity(data);
+      setSelectedContributor("");
     } catch (e) {
       setActivityError(e instanceof Error ? e.message : "Unknown error");
     } finally {
@@ -295,7 +297,7 @@ export default function DashboardDetailPage() {
   };
 
   const generateSummary = async () => {
-    if (!activity || !token) return;
+    if (!filteredActivity || !token) return;
     setIsGeneratingSummary(true);
     setSummaryError(null);
     try {
@@ -306,9 +308,9 @@ export default function DashboardDetailPage() {
           Authorization: `token ${token}`,
         },
         body: JSON.stringify({
-          activity,
-          since: activity.since,
-          until: activity.until,
+          activity: filteredActivity,
+          since: filteredActivity.since,
+          until: filteredActivity.until,
         }),
       });
       if (!res.ok) {
@@ -323,6 +325,47 @@ export default function DashboardDetailPage() {
       setIsGeneratingSummary(false);
     }
   };
+
+  const contributorOptions = useMemo(() => {
+    if (!activity) return [];
+
+    const contributors = new Set<string>();
+    for (const repo of activity.repos) {
+      for (const commit of repo.commits) {
+        if (commit.author?.login) contributors.add(commit.author.login);
+      }
+      for (const pr of repo.pulls) {
+        if (pr.user.login) contributors.add(pr.user.login);
+      }
+      for (const issue of repo.issues) {
+        if (issue.user.login) contributors.add(issue.user.login);
+      }
+    }
+
+    return Array.from(contributors).sort((a, b) => a.localeCompare(b));
+  }, [activity]);
+
+  const filteredActivity = useMemo(() => {
+    if (!activity) return null;
+    if (!selectedContributor) return activity;
+
+    const repos = activity.repos
+      .map((repo) => {
+        const commits = repo.commits.filter(
+          (commit) => commit.author?.login === selectedContributor,
+        );
+        const pulls = repo.pulls.filter(
+          (pr) => pr.user.login === selectedContributor,
+        );
+        const issues = repo.issues.filter(
+          (issue) => issue.user.login === selectedContributor,
+        );
+        return { ...repo, commits, pulls, issues };
+      })
+      .filter((repo) => repo.commits.length + repo.pulls.length + repo.issues.length > 0);
+
+    return { ...activity, repos };
+  }, [activity, selectedContributor]);
 
   if (!tokenChecked) {
     return (
@@ -426,17 +469,46 @@ export default function DashboardDetailPage() {
 
       {activity && (
         <>
+          <div className="mb-4">
+            <label className="text-sm font-bold block mb-1" htmlFor="contributor">
+              Contributor
+            </label>
+            <select
+              id="contributor"
+              className="py-2 px-3 leading-tight text-gray-700 rounded-sm border bg-white focus:outline-hidden focus:shadow-outline"
+              value={selectedContributor}
+              onChange={(e) => {
+                setSelectedContributor(e.target.value);
+                setSummary(null);
+                setSummaryError(null);
+              }}
+            >
+              <option value="">All contributors</option>
+              {contributorOptions.map((contributor) => (
+                <option key={contributor} value={contributor}>
+                  {contributor}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid gap-4 mb-6">
-            {activity.repos.map((repo) => (
+            {filteredActivity?.repos.map((repo) => (
               <RepoSection key={repo.repoFullName} repo={repo} />
             ))}
           </div>
+
+          {filteredActivity && filteredActivity.repos.length === 0 && (
+            <p className="text-sm text-gray-500 mb-6">
+              No activity found for contributor <span className="font-medium">{selectedContributor}</span> in this date range.
+            </p>
+          )}
 
           <div className="flex items-center gap-4 mb-6">
             <button
               className="py-2 px-4 text-white rounded-md bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
               onClick={generateSummary}
-              disabled={isGeneratingSummary}
+              disabled={isGeneratingSummary || !filteredActivity || filteredActivity.repos.length === 0}
             >
               {isGeneratingSummary ? "Generating..." : "Generate Summary"}
             </button>
