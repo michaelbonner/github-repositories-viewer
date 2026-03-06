@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import { Nav } from "./components/Nav";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -49,6 +50,13 @@ export default function RootLayout({
             2023-{new Date().getFullYear()} Bootpack Digital, LLC
           </p>
         </footer>
+        <Script
+          src="https://easycustomerfeedback.com/widget/1a27246abc4b4c6db760097e784c9558/embed"
+          data-label="Send feedback"
+          data-position="right"
+          data-color="#111827"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
