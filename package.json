@@ -23,7 +23,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "crypto-js": "^4.2.0",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^0.45.2",
     "eslint-config-next": "^16.2.1",
     "next": "^16.2.1",
     "openai": "^6.33.0",
