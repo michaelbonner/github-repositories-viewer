@@ -18,28 +18,28 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.10",
-    "@tailwindcss/postcss": "^4.2.2",
+    "@tailwindcss/postcss": "^4.2.4",
     "@tailwindcss/typography": "^0.5.19",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "crypto-js": "^4.2.0",
     "drizzle-orm": "^0.45.2",
-    "eslint-config-next": "^16.2.3",
-    "next": "^16.2.3",
+    "eslint-config-next": "^16.2.4",
+    "next": "^16.2.4",
     "openai": "^6.34.0",
     "pg": "^8.20.0",
-    "postcss": "^8.5.9",
+    "postcss": "^8.5.10",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-icons": "^5.6.0",
     "streamdown": "^2.5.0",
-    "tailwindcss": "^4.2.2",
-    "typescript": "^6.0.2"
+    "tailwindcss": "^4.2.4",
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
     "@types/pg": "^8.20.0",
     "drizzle-kit": "^0.31.10",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.5"
   }
 }
