@@ -39,6 +39,11 @@ type Dashboard = {
   repositories: { id: string; repoFullName: string }[];
 };
 
+type GithubRepository = {
+  id: number;
+  full_name: string;
+};
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {
     month: "short",
@@ -240,6 +245,16 @@ export default function DashboardDetailPage() {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editRepos, setEditRepos] = useState<Set<string>>(new Set());
+  const [manualRepo, setManualRepo] = useState("");
+  const [repoSearch, setRepoSearch] = useState("");
+  const [userRepos, setUserRepos] = useState<GithubRepository[]>([]);
+  const [isLoadingRepos, setIsLoadingRepos] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
   useEffect(() => {
     const checkToken = () => {
       const raw = localStorage.getItem("githubRepositoriesViewer-accessToken");
@@ -325,6 +340,88 @@ export default function DashboardDetailPage() {
     }
   };
 
+  const openEdit = async () => {
+    if (!dashboard) return;
+    setIsEditing(true);
+    setEditName(dashboard.name);
+    setEditRepos(new Set(dashboard.repositories.map((r) => r.repoFullName)));
+    setManualRepo("");
+    setRepoSearch("");
+    setEditError(null);
+
+    if (!token || userRepos.length > 0) return;
+    setIsLoadingRepos(true);
+    try {
+      const res = await fetch(
+        "https://api.github.com/user/repos?sort=updated&per_page=100",
+        { headers: { Authorization: `token ${token}` } },
+      );
+      if (res.ok) {
+        const data: GithubRepository[] = await res.json();
+        setUserRepos(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      // fall back to manual entry
+    } finally {
+      setIsLoadingRepos(false);
+    }
+  };
+
+  const toggleEditRepo = (fullName: string) => {
+    setEditRepos((prev) => {
+      const next = new Set(prev);
+      if (next.has(fullName)) next.delete(fullName);
+      else next.add(fullName);
+      return next;
+    });
+  };
+
+  const addManualEditRepo = () => {
+    const trimmed = manualRepo.trim();
+    if (!trimmed) return;
+    setEditRepos((prev) => new Set(prev).add(trimmed));
+    setManualRepo("");
+  };
+
+  const saveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !id) return;
+    const name = editName.trim();
+    if (!name) {
+      setEditError("Name is required");
+      return;
+    }
+    setIsSavingEdit(true);
+    setEditError(null);
+    try {
+      const res = await fetch(`/api/dashboards/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `token ${token}`,
+        },
+        body: JSON.stringify({
+          name,
+          repositories: Array.from(editRepos),
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save dashboard");
+      const data = await res.json();
+      setDashboard(data);
+      setIsEditing(false);
+      setActivity(null);
+      setSummary(null);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const filteredUserRepos = userRepos.filter((r) =>
+    r.full_name.toLowerCase().includes(repoSearch.toLowerCase()),
+  );
+
   const contributorOptions = useMemo(() => {
     if (!activity) return [];
 
@@ -407,7 +504,17 @@ export default function DashboardDetailPage() {
         <Link href="/dashboards" className="text-sm text-gray-500 hover:text-gray-900">
           ← Dashboards
         </Link>
-        <h1 className="text-2xl font-bold sm:text-4xl mt-2">{dashboard.name}</h1>
+        <div className="flex justify-between items-start gap-4 mt-2">
+          <h1 className="text-2xl font-bold sm:text-4xl">{dashboard.name}</h1>
+          {!isEditing && (
+            <button
+              className="py-2 px-4 text-sm rounded-md border hover:bg-gray-50"
+              onClick={openEdit}
+            >
+              Edit
+            </button>
+          )}
+        </div>
         <p className="text-sm text-gray-500 mt-1">
           {dashboard.repositories.length} repo
           {dashboard.repositories.length !== 1 ? "s" : ""}:{" "}
@@ -426,6 +533,118 @@ export default function DashboardDetailPage() {
           ))}
         </p>
       </div>
+
+      {isEditing && (
+        <form className="mb-6 p-4 border rounded-md" onSubmit={saveEdit}>
+          <h2 className="text-lg font-semibold mb-4">Edit Dashboard</h2>
+          <div className="grid gap-4">
+            <div>
+              <label className="text-sm font-bold block mb-1" htmlFor="editName">
+                Name
+              </label>
+              <input
+                id="editName"
+                className="py-2 px-3 w-full leading-tight text-gray-700 rounded-sm border appearance-none focus:outline-hidden focus:shadow-outline"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <p className="text-sm font-bold mb-1">Repositories</p>
+              {editRepos.size > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {Array.from(editRepos).map((r) => (
+                    <span
+                      key={r}
+                      className="flex items-center gap-1 py-1 px-2 text-sm bg-slate-100 rounded"
+                    >
+                      {r}
+                      <button
+                        type="button"
+                        className="text-gray-500 hover:text-red-600"
+                        onClick={() => toggleEditRepo(r)}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {isLoadingRepos ? (
+                <p className="text-sm text-gray-500">Loading your repos...</p>
+              ) : userRepos.length > 0 ? (
+                <div>
+                  <input
+                    className="py-2 px-3 w-full leading-tight text-gray-700 rounded-sm border appearance-none focus:outline-hidden focus:shadow-outline mb-2"
+                    placeholder="Search repos..."
+                    value={repoSearch}
+                    onChange={(e) => setRepoSearch(e.target.value)}
+                  />
+                  <div className="max-h-48 overflow-y-auto border rounded p-2 grid gap-1">
+                    {filteredUserRepos.map((repo) => (
+                      <label
+                        key={repo.id}
+                        className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 px-1 py-0.5 rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={editRepos.has(repo.full_name)}
+                          onChange={() => toggleEditRepo(repo.full_name)}
+                        />
+                        {repo.full_name}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="flex gap-2 mt-2">
+                <input
+                  className="py-2 px-3 flex-1 leading-tight text-gray-700 rounded-sm border appearance-none focus:outline-hidden focus:shadow-outline"
+                  placeholder="Add manually: owner/repo"
+                  value={manualRepo}
+                  onChange={(e) => setManualRepo(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addManualEditRepo();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="py-2 px-4 text-sm rounded-md border hover:bg-gray-50"
+                  onClick={addManualEditRepo}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            {editError && <p className="text-sm text-red-700">{editError}</p>}
+
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                className="py-2 px-4 text-sm rounded-md border hover:bg-gray-50"
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSavingEdit}
+                className="py-2 px-4 text-sm text-white rounded-md bg-slate-900 hover:bg-slate-800 disabled:opacity-50"
+              >
+                {isSavingEdit ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
 
       {/* Date range controls */}
       <div className="flex flex-wrap gap-4 items-end mb-6 p-4 border rounded-md">
