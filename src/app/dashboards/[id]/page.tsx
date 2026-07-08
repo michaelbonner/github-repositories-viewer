@@ -44,12 +44,21 @@ type GithubRepository = {
   full_name: string;
 };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   });
+}
+
+function formatDateTimeLocalValue(date: Date) {
+  const timezoneOffsetMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - timezoneOffsetMs)
+    .toISOString()
+    .slice(0, 16);
 }
 
 function getRepoUrl(repoFullName: string) {
@@ -131,7 +140,7 @@ function RepoSection({ repo }: { repo: RepoActivity }) {
                       </a>
                       <p className="text-gray-500 text-xs mt-0.5">
                         {c.author?.login ?? c.commit.author.name} ·{" "}
-                        {formatDate(c.commit.author.date)}
+                        {formatDateTime(c.commit.author.date)}
                       </p>
                     </div>
                   </li>
@@ -169,7 +178,7 @@ function RepoSection({ repo }: { repo: RepoActivity }) {
                       <div className="flex items-center gap-2 mt-0.5">
                         <StateBadge state={pr.state} mergedAt={pr.merged_at} />
                         <span className="text-xs text-gray-500">
-                          {pr.user.login} · {formatDate(pr.updated_at)}
+                          {pr.user.login} · {formatDateTime(pr.updated_at)}
                         </span>
                       </div>
                     </div>
@@ -208,7 +217,7 @@ function RepoSection({ repo }: { repo: RepoActivity }) {
                       <div className="flex items-center gap-2 mt-0.5">
                         <StateBadge state={issue.state} />
                         <span className="text-xs text-gray-500">
-                          {issue.user.login} · {formatDate(issue.updated_at)}
+                          {issue.user.login} · {formatDateTime(issue.updated_at)}
                         </span>
                       </div>
                     </div>
@@ -230,13 +239,14 @@ export default function DashboardDetailPage() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
 
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
-  const today = new Date().toISOString().slice(0, 10);
-
-  const [since, setSince] = useState(sevenDaysAgo);
-  const [until, setUntil] = useState(today);
+  const [since, setSince] = useState(() =>
+    formatDateTimeLocalValue(
+      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    ),
+  );
+  const [until, setUntil] = useState(() =>
+    formatDateTimeLocalValue(new Date()),
+  );
   const [activity, setActivity] = useState<ActivityData | null>(null);
   const [selectedContributor, setSelectedContributor] = useState("");
   const [isLoadingActivity, setIsLoadingActivity] = useState(false);
@@ -288,13 +298,28 @@ export default function DashboardDetailPage() {
 
   const loadActivity = async () => {
     if (!token) return;
+    const sinceDate = new Date(since);
+    const untilDate = new Date(until);
+    if (
+      !since ||
+      !until ||
+      Number.isNaN(sinceDate.getTime()) ||
+      Number.isNaN(untilDate.getTime())
+    ) {
+      setActivityError("Select both a start and end date and time.");
+      return;
+    }
+    if (sinceDate > untilDate) {
+      setActivityError("Start date and time must be before end date and time.");
+      return;
+    }
     setIsLoadingActivity(true);
     setActivityError(null);
     setSummary(null);
     try {
       const params = new URLSearchParams({
-        since: new Date(since).toISOString(),
-        until: new Date(until + "T23:59:59").toISOString(),
+        since: sinceDate.toISOString(),
+        until: untilDate.toISOString(),
       });
       const res = await fetch(`/api/dashboards/${id}/activity?${params}`, {
         headers: { Authorization: `token ${token}` },
@@ -646,7 +671,7 @@ export default function DashboardDetailPage() {
         </form>
       )}
 
-      {/* Date range controls */}
+      {/* Date and time range controls */}
       <div className="flex flex-wrap gap-4 items-end mb-6 p-4 border rounded-md">
         <div>
           <label className="text-sm font-bold block mb-1" htmlFor="since">
@@ -654,10 +679,11 @@ export default function DashboardDetailPage() {
           </label>
           <input
             id="since"
-            type="date"
+            type="datetime-local"
             className="py-2 px-3 leading-tight text-gray-700 rounded-sm border appearance-none focus:outline-hidden focus:shadow-outline"
             value={since}
             onChange={(e) => setSince(e.target.value)}
+            step="60"
           />
         </div>
         <div>
@@ -666,10 +692,11 @@ export default function DashboardDetailPage() {
           </label>
           <input
             id="until"
-            type="date"
+            type="datetime-local"
             className="py-2 px-3 leading-tight text-gray-700 rounded-sm border appearance-none focus:outline-hidden focus:shadow-outline"
             value={until}
             onChange={(e) => setUntil(e.target.value)}
+            step="60"
           />
         </div>
         <button
