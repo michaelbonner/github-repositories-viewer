@@ -6,14 +6,27 @@ import { encrypt } from "../lib/encrypt";
 
 const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
 
+const getAuthMethod = () => {
+  if (typeof localStorage === "undefined") return null;
+  return localStorage.getItem("githubRepositoriesViewer-authMethod");
+};
+
+const hasToken = () => {
+  if (typeof localStorage === "undefined") return false;
+  return !!localStorage.getItem("githubRepositoriesViewer-accessToken");
+};
+
 export const TokenSetter = () => {
   const [isShowingToken, setIsShowingToken] = useState<boolean>(false);
   const [isOAuth, setIsOAuth] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
-    setIsOAuth(getAuthMethod() === "oauth");
-    setIsSignedIn(hasToken());
+    const timeout = setTimeout(() => {
+      setIsOAuth(getAuthMethod() === "oauth");
+      setIsSignedIn(hasToken());
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   const getDefaultTokenValue = () => {
@@ -26,16 +39,6 @@ export const TokenSetter = () => {
     if (!localStorageValue) return "";
 
     return decrypt(localStorageValue);
-  };
-
-  const getAuthMethod = () => {
-    if (typeof localStorage === "undefined") return null;
-    return localStorage.getItem("githubRepositoriesViewer-authMethod");
-  };
-
-  const hasToken = () => {
-    if (typeof localStorage === "undefined") return false;
-    return !!localStorage.getItem("githubRepositoriesViewer-accessToken");
   };
 
   const handleSignOut = () => {

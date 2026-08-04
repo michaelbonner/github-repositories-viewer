@@ -2,7 +2,7 @@
 
 import { GithubCollaborator } from "@/types/GithubCollaborator";
 import { GithubRepository } from "@/types/GithubRepository";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AiFillGithub } from "react-icons/ai";
 import { decrypt } from "../lib/decrypt";
 import Toggle from "./Toggle";
@@ -11,9 +11,6 @@ export const RepositoriesList = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [repositories, setRepositories] = useState<GithubRepository[]>([]);
   const [errorText, setErrorText] = useState<string | null>(null);
-  const [filteredRepositories, setFilteredRepositories] = useState<
-    GithubRepository[]
-  >([]);
   const [filterText, setFilterText] = useState<string>("");
   const [isIncludingArchived, setIsIncludingArchived] =
     useState<boolean>(false);
@@ -24,8 +21,8 @@ export const RepositoriesList = () => {
   const [isLoadingRepositories, setIsLoadingRepositories] =
     useState<boolean>(false);
 
-  useEffect(() => {
-    setFilteredRepositories(
+  const filteredRepositories = useMemo(
+    () =>
       repositories
         .filter((repository) => {
           return repository.name
@@ -44,13 +41,13 @@ export const RepositoriesList = () => {
           }
           return true;
         }),
-    );
-  }, [
-    filterText,
-    isIncludingArchived,
-    repositories,
-    isRepositoriesWithPullRequestsOnly,
-  ]);
+    [
+      filterText,
+      isIncludingArchived,
+      repositories,
+      isRepositoriesWithPullRequestsOnly,
+    ],
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {

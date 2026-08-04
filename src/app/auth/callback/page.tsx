@@ -1,47 +1,50 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { encrypt } from "../../lib/encrypt";
 
 export default function AuthCallback() {
+  const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading",
   );
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    const error = params.get("error");
-
-    if (error) {
-      setStatus("error");
-      setErrorMessage(
-        params.get("error_description") || "Authorization was denied",
-      );
-      return;
-    }
-
-    if (!code) {
-      setStatus("error");
-      setErrorMessage("No authorization code received from GitHub");
-      return;
-    }
-
-    const storedState = sessionStorage.getItem(
-      "githubRepositoriesViewer-oauthState",
-    );
-    const returnedState = params.get("state");
-    sessionStorage.removeItem("githubRepositoriesViewer-oauthState");
-
-    if (!storedState || storedState !== returnedState) {
-      console.error("OAuth state mismatch — possible CSRF attempt");
-      setStatus("error");
-      setErrorMessage("Authentication failed: invalid state parameter");
-      return;
-    }
-
     const exchangeCode = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+      const error = params.get("error");
+
+      if (error) {
+        setStatus("error");
+        setErrorMessage(
+          params.get("error_description") || "Authorization was denied",
+        );
+        return;
+      }
+
+      if (!code) {
+        setStatus("error");
+        setErrorMessage("No authorization code received from GitHub");
+        return;
+      }
+
+      const storedState = sessionStorage.getItem(
+        "githubRepositoriesViewer-oauthState",
+      );
+      const returnedState = params.get("state");
+      sessionStorage.removeItem("githubRepositoriesViewer-oauthState");
+
+      if (!storedState || storedState !== returnedState) {
+        console.error("OAuth state mismatch — possible CSRF attempt");
+        setStatus("error");
+        setErrorMessage("Authentication failed: invalid state parameter");
+        return;
+      }
+
       try {
         const response = await fetch("/api/auth/github", {
           method: "POST",
@@ -64,7 +67,7 @@ export default function AuthCallback() {
         localStorage.setItem("githubRepositoriesViewer-authMethod", "oauth");
 
         setStatus("success");
-        window.location.href = "/";
+        router.replace("/");
       } catch {
         setStatus("error");
         setErrorMessage("Failed to complete authentication");
@@ -72,7 +75,7 @@ export default function AuthCallback() {
     };
 
     exchangeCode();
-  }, []);
+  }, [router]);
 
   return (
     <main className="py-12 px-4 mx-auto max-w-7xl sm:px-8">
@@ -85,9 +88,9 @@ export default function AuthCallback() {
         {status === "error" && (
           <div>
             <p className="text-red-700">{errorMessage}</p>
-            <a className="mt-4 inline-block underline" href="/">
+            <Link className="mt-4 inline-block underline" href="/">
               Go back
-            </a>
+            </Link>
           </div>
         )}
       </div>

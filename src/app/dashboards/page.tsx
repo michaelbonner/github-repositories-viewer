@@ -55,12 +55,7 @@ export default function DashboardsPage() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    if (!token) return;
-    fetchDashboards();
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const fetchDashboards = async () => {
+  async function fetchDashboards() {
     if (!token) return;
     setIsLoading(true);
     setError(null);
@@ -76,7 +71,13 @@ export default function DashboardsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    if (!token) return;
+    const timeout = setTimeout(() => void fetchDashboards(), 0);
+    return () => clearTimeout(timeout);
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async (id: string) => {
     if (!token) return;
