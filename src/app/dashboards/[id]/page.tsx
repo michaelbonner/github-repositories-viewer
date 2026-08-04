@@ -466,7 +466,7 @@ export default function DashboardDetailPage() {
     return Array.from(contributors).sort((a, b) => a.localeCompare(b));
   }, [activity]);
 
-  const filteredActivity = useMemo(() => {
+  const filteredActivity = (() => {
     if (!activity) return null;
     if (!selectedContributor) return activity;
 
@@ -486,7 +486,7 @@ export default function DashboardDetailPage() {
       .filter((repo) => repo.commits.length + repo.pulls.length + repo.issues.length > 0);
 
     return { ...activity, repos };
-  }, [activity, selectedContributor]);
+  })();
 
   if (!tokenChecked) {
     return (
