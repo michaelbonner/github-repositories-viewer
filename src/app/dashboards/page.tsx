@@ -331,25 +331,35 @@ export default function DashboardsPage() {
           {dashboards.map((d) => (
             <div
               key={d.id}
-              className="flex items-center justify-between py-4 px-4 border rounded-md hover:bg-gray-50"
+              className="relative flex items-center justify-between py-4 px-4 border rounded-md cursor-pointer hover:bg-gray-50"
             >
-              <div>
-                <p className="font-semibold">{d.name}</p>
+              <Link
+                href={`/dashboards/${d.id}`}
+                aria-label={`View ${d.name} dashboard`}
+                className="absolute inset-0 rounded-md focus:ring-2 focus:ring-slate-900 focus:outline-hidden"
+              />
+              <div className="relative pointer-events-none">
+                <Link
+                  href={`/dashboards/${d.id}`}
+                  className="relative pointer-events-auto font-semibold hover:underline"
+                >
+                  {d.name}
+                </Link>
                 <p className="text-sm text-gray-500">
                   {d.repositories.length} repo
                   {d.repositories.length !== 1 ? "s" : ""}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="relative flex gap-2 pointer-events-none">
                 <Link
                   href={`/dashboards/${d.id}`}
-                  className="py-1 px-3 text-sm rounded-md border hover:bg-gray-100"
+                  className="pointer-events-auto py-1 px-3 text-sm rounded-md border hover:bg-gray-100"
                 >
                   View
                 </Link>
                 <button
-                  className="py-1 px-3 text-sm text-red-700 rounded-md border border-red-700 hover:bg-red-50"
-                  onClick={() => handleDelete(d.id)}
+                  className="pointer-events-auto py-1 px-3 text-sm text-red-700 rounded-md border border-red-700 hover:bg-red-50"
+                  onClick={() => void handleDelete(d.id)}
                 >
                   Delete
                 </button>
