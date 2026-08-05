@@ -1,0 +1,46 @@
+# Reinstalled / regenerated inside the image
+node_modules
+.next
+
+# bunfig.toml sets minimumReleaseAge, a guard for interactive `bun add` in dev.
+# The image installs from a frozen lockfile where nothing is resolved, so it can
+# only cause surprises.
+bunfig.toml
+
+# Version control / CI
+.git
+.gitignore
+.github
+
+# Local env & secrets. Runtime env comes from Dokploy; build-time values come
+# from build-args. Without this, a local .env would be baked into a published
+# GHCR image — Next also copies it into .next/standalone.
+.env
+.env.*
+!.env.example
+
+# Infra & tooling that runs in CI or locally, never in the image.
+# scripts/dokploy-preview.mjs only ever runs on a GitHub runner.
+scripts
+docker-compose.yml
+Dockerfile
+.dockerignore
+.dokploy
+
+# Tests
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+e2e
+playwright.config.ts
+test-results
+playwright-report
+
+# Docs, editor & OS cruft
+*.md
+.vscode
+.claude
+.DS_Store
+**/.DS_Store
+tsconfig.tsbuildinfo
