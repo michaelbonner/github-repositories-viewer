@@ -40,7 +40,7 @@
     "@types/crypto-js": "^4.2.2",
     "@types/pg": "^8.20.4",
     "drizzle-kit": "^0.31.10",
-    "eslint": "^9",
+    "eslint": "^10.8.0",
     "vitest": "^4.1.10"
   }
 }
