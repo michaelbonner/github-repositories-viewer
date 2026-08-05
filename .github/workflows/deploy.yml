@@ -1,0 +1,119 @@
+name: Build & Deploy (Dokploy)
+
+# Build the production image on a GitHub runner (NOT on the Dokploy server),
+# push it to GHCR, then tell Dokploy to pull and redeploy. This keeps the
+# CPU/RAM-heavy build off the production box, so the live site stays responsive
+# while a deploy runs. Dokploy previously built this with nixpacks.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Keyed on the deploy target, not the ref. There is exactly one production
+# Dokploy application, and every run mutates it (saveDockerProvider, then
+# application.deploy). A ref-keyed group would let a workflow_dispatch from a
+# feature branch run alongside a master push, and if their two API calls
+# interleave, production can end up pinned to the wrong image.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+  # Build-time values below are inlined into the client bundle, so they are
+  # public by definition and live here rather than in secrets. They must stay in
+  # sync with the Dokploy app's env.
+#   NEXT_PUBLIC_GITHUB_CLIENT_ID — OAuth client IDs are public
+#   NEXT_PUBLIC_ENCRYPTION_KEY — ends up in the client bundle, but this repo is public — keep it out of the workflow file
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          # PAT with write:packages — the package is user-owned, so the
+          # per-repo GITHUB_TOKEN can't push to it. The PAT owner can.
+          username: michaelbonner
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Image metadata (lowercase repo)
+        id: meta
+        run: echo "image=$(echo "${IMAGE}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          # The Dokploy host is x86_64; a single-arch build keeps this fast.
+          platforms: linux/amd64
+          tags: |
+            ${{ steps.meta.outputs.image }}:latest
+            ${{ steps.meta.outputs.image }}:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_GITHUB_CLIENT_ID=Ov23litckzREulGIMe3j
+            NEXT_PUBLIC_ENCRYPTION_KEY=${{ secrets.NEXT_PUBLIC_ENCRYPTION_KEY }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Point the app at the exact image this run produced rather than :latest,
+      # so a redeploy from the Dokploy UI replays this commit instead of
+      # whatever happens to be tagged latest at that moment.
+      #
+      # The application.update call is what keeps the app on the Docker
+      # provider: it is idempotent, so it both performs the original cutover
+      # from the nixpacks/github source and re-asserts it if anyone flips the
+      # app back in the UI. autoDeploy stays off because deploys are triggered
+      # explicitly below, once the image is actually pushed. Dokploy's built-in
+      # preview deployments are turned off here too — preview.yml replaces them,
+      # and leaving both on would build every PR twice, once on the prod box.
+      - name: Pin Dokploy to this commit's image
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          IMAGE_REF: ${{ steps.meta.outputs.image }}:${{ github.sha }}
+        run: |
+          curl --fail --show-error --silent -X POST \
+            "${DOKPLOY_URL}/api/application.saveDockerProvider" \
+            -H "x-api-key: ${DOKPLOY_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -nc \
+                  --arg id "$DOKPLOY_APPLICATION_ID" \
+                  --arg image "$IMAGE_REF" \
+                  --arg pass "$GHCR_TOKEN" \
+                  '{applicationId:$id, dockerImage:$image, registryUrl:"ghcr.io", username:"michaelbonner", password:$pass}')"
+
+          # Partial update — `env` is deliberately not sent, so the runtime
+          # config stays owned by the Dokploy UI.
+          curl --fail --show-error --silent -X POST \
+            "${DOKPLOY_URL}/api/application.update" \
+            -H "x-api-key: ${DOKPLOY_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "{\"applicationId\":\"${DOKPLOY_APPLICATION_ID}\",\"sourceType\":\"docker\",\"autoDeploy\":false,\"isPreviewDeploymentsActive\":false}"
+
+      - name: Trigger Dokploy deploy
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
+        run: |
+          curl --fail --show-error --silent -X POST \
+            "${DOKPLOY_URL}/api/application.deploy" \
+            -H "x-api-key: ${DOKPLOY_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "{\"applicationId\":\"${DOKPLOY_APPLICATION_ID}\"}"
