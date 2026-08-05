@@ -54,6 +54,15 @@ jobs:
       # Only the image ref: the preview host is the script's to decide, and the
       # PR comment reads it back from the deploy step's preview_url output.
       # Computing it a second time here would let the two drift.
+      - name: Require the GHCR pull token
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          if [ -z "$GHCR_PULL_TOKEN" ]; then
+            echo "::error::GHCR_PULL_TOKEN is not set. Dokploy needs a read:packages token to pull preview images. Create one and add it as a repository secret; do not reuse GHCR_TOKEN, which can push."
+            exit 1
+          fi
+
       - name: Compute image name
         id: vars
         run: echo "image=$(echo "${IMAGE}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
@@ -123,7 +132,9 @@ jobs:
           DOKPLOY_PREVIEW_ENVIRONMENT_ID: ${{ env.DOKPLOY_PREVIEW_ENVIRONMENT_ID }}
           PREVIEW_HOST_SUFFIX: ${{ env.PREVIEW_HOST_SUFFIX }}
           GHCR_USERNAME: michaelbonner
-          GHCR_PASSWORD: ${{ secrets.GHCR_TOKEN }}
+          # Pull-only, for the same reason as production: this is stored on the
+          # per-PR Dokploy app so it can pull the preview image.
+          GHCR_PASSWORD: ${{ secrets.GHCR_PULL_TOKEN }}
           PR_NUMBER: ${{ github.event.number }}
           IMAGE: ${{ steps.vars.outputs.image }}:pr-${{ github.event.number }}-${{ github.sha }}
         run: node scripts/dokploy-preview.mjs deploy

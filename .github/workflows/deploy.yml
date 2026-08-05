@@ -47,6 +47,20 @@ jobs:
       contents: read
       packages: write
     steps:
+      # Fails before the build rather than after it. GHCR_PULL_TOKEN is what
+      # Dokploy stores to pull this image; an unset secret interpolates to an
+      # empty string, which would hand Dokploy blank credentials and leave it
+      # unable to pull. There is deliberately no fallback to GHCR_TOKEN, because
+      # that would silently restore the push-capable token this separates out.
+      - name: Require the GHCR pull token
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          if [ -z "$GHCR_PULL_TOKEN" ]; then
+            echo "::error::GHCR_PULL_TOKEN is not set. Dokploy needs a read:packages token to pull this image. Create one and add it as a repository secret; do not reuse GHCR_TOKEN, which can push."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v5
 
@@ -98,7 +112,9 @@ jobs:
           DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
           DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
           DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          # Pull-only. Dokploy stores this credential, so it must not be able to
+          # push to the package; GHCR_TOKEN stays scoped to the login above.
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
           IMAGE_REF: ${{ steps.meta.outputs.image }}:${{ github.sha }}
         run: |
           curl --fail --show-error --silent \
@@ -109,7 +125,7 @@ jobs:
             -d "$(jq -nc \
                   --arg id "$DOKPLOY_APPLICATION_ID" \
                   --arg image "$IMAGE_REF" \
-                  --arg pass "$GHCR_TOKEN" \
+                  --arg pass "$GHCR_PULL_TOKEN" \
                   '{applicationId:$id, dockerImage:$image, registryUrl:"ghcr.io", username:"michaelbonner", password:$pass}')"
 
           # Partial update — `env` is deliberately not sent, so the runtime
