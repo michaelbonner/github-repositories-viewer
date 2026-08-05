@@ -114,7 +114,7 @@ jobs:
           DOCKER_CONFIG="$(mktemp -d)"
           export DOCKER_CONFIG
           trap 'rm -rf "$DOCKER_CONFIG"' EXIT
-          if ! printf '%%s' "$GHCR_PULL_TOKEN" | docker login ghcr.io -u michaelbonner --password-stdin >/dev/null 2>&1; then
+          if ! printf '%s' "$GHCR_PULL_TOKEN" | docker login ghcr.io -u michaelbonner --password-stdin >/dev/null 2>&1; then
             echo "::error::GHCR_PULL_TOKEN was rejected by ghcr.io. Not storing it on Dokploy, which would replace working registry credentials with an unusable one."
             exit 1
           fi
