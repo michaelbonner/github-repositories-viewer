@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { decrypt } from "../lib/decrypt";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 type DashboardRepo = {
   id: string;
@@ -26,7 +25,6 @@ type GithubRepository = {
 };
 
 export default function DashboardsPage() {
-  const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [tokenChecked, setTokenChecked] = useState(false);
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
@@ -333,22 +331,17 @@ export default function DashboardsPage() {
           {dashboards.map((d) => (
             <div
               key={d.id}
-              role="link"
-              tabIndex={0}
-              onClick={() => router.push(`/dashboards/${d.id}`)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  router.push(`/dashboards/${d.id}`);
-                }
-              }}
-              className="flex items-center justify-between py-4 px-4 border rounded-md cursor-pointer hover:bg-gray-50 focus:ring-2 focus:ring-slate-900 focus:outline-hidden"
+              className="relative flex items-center justify-between py-4 px-4 border rounded-md cursor-pointer hover:bg-gray-50"
             >
-              <div>
+              <Link
+                href={`/dashboards/${d.id}`}
+                aria-label={`View ${d.name} dashboard`}
+                className="absolute inset-0 rounded-md focus:ring-2 focus:ring-slate-900 focus:outline-hidden"
+              />
+              <div className="relative pointer-events-none">
                 <Link
                   href={`/dashboards/${d.id}`}
-                  className="font-semibold hover:underline"
-                  onClick={(e) => e.stopPropagation()}
+                  className="relative pointer-events-auto font-semibold hover:underline"
                 >
                   {d.name}
                 </Link>
@@ -357,20 +350,16 @@ export default function DashboardsPage() {
                   {d.repositories.length !== 1 ? "s" : ""}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="relative flex gap-2 pointer-events-none">
                 <Link
                   href={`/dashboards/${d.id}`}
-                  className="py-1 px-3 text-sm rounded-md border hover:bg-gray-100"
-                  onClick={(e) => e.stopPropagation()}
+                  className="pointer-events-auto py-1 px-3 text-sm rounded-md border hover:bg-gray-100"
                 >
                   View
                 </Link>
                 <button
-                  className="py-1 px-3 text-sm text-red-700 rounded-md border border-red-700 hover:bg-red-50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void handleDelete(d.id);
-                  }}
+                  className="pointer-events-auto py-1 px-3 text-sm text-red-700 rounded-md border border-red-700 hover:bg-red-50"
+                  onClick={() => void handleDelete(d.id)}
                 >
                   Delete
                 </button>
