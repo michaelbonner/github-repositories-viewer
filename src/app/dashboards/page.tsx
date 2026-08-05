@@ -337,6 +337,12 @@ export default function DashboardsPage() {
                 href={`/dashboards/${d.id}`}
                 aria-label={`View ${d.name} dashboard`}
                 className="absolute inset-0 rounded-md focus:ring-2 focus:ring-slate-900 focus:outline-hidden"
+                onKeyDown={(event) => {
+                  if (event.key === " ") event.preventDefault();
+                }}
+                onKeyUp={(event) => {
+                  if (event.key === " ") event.currentTarget.click();
+                }}
               />
               <div className="relative pointer-events-none">
                 <Link
