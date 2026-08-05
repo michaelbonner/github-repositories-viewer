@@ -16,9 +16,12 @@ on:
 # feature branch run alongside a master push, and if their two API calls
 # interleave, production can end up pinned to the wrong image.
 #
-# Production deploys queue rather than cancel. Cancelling mid-run can leave the
-# app pinned to an image whose deploy was never triggered, so the Dokploy record
-# and what is actually serving disagree. Waiting is the cheaper failure.
+# cancel-in-progress is off so a RUNNING deploy is never interrupted part-way
+# between saveDockerProvider and application.deploy, which would leave the app
+# pinned to an image whose deploy never fired. GitHub still keeps only one
+# pending run per group and supersedes an older pending one; that is fine here,
+# because on two quick pushes to master the newer commit is the one that
+# should reach production.
 concurrency:
   group: deploy-production
   cancel-in-progress: false
