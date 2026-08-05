@@ -48,11 +48,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Compute identifiers
+      # Only the image ref: the preview host is the script's to decide, and the
+      # PR comment reads it back from the deploy step's preview_url output.
+      # Computing it a second time here would let the two drift.
+      - name: Compute image name
         id: vars
-        run: |
-          echo "image=$(echo "${IMAGE}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
-          echo "host=grv-${{ github.event.number }}.${PREVIEW_HOST_SUFFIX}" >> "$GITHUB_OUTPUT"
+        run: echo "image=$(echo "${IMAGE}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -83,15 +84,30 @@ jobs:
 
       # Run the orchestration script from the BASE branch, not the PR, so a PR
       # cannot modify code that executes with DOKPLOY_API_KEY in scope.
-      # (Bootstrap: if the script isn't on the base branch yet, fall back to
-      # the PR copy.)
+      #
+      # This FAILS the job when the trusted copy can't be obtained. Silently
+      # falling back to the PR's copy would hand PR-controlled code the
+      # deployment secrets and defeat the entire point of the step. Until this
+      # script exists on the base branch, the one-time bootstrap is an explicit,
+      # auditable opt-in: set repository variable PREVIEW_ALLOW_PR_SCRIPT=true,
+      # then remove it once this PR merges.
+      #
+      # base_ref and the variable go through env rather than being interpolated
+      # into the shell, so a crafted branch name can't inject commands here.
       - name: Use trusted orchestration script (base branch)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          ALLOW_PR_SCRIPT: ${{ vars.PREVIEW_ALLOW_PR_SCRIPT }}
         run: |
-          git fetch origin "${{ github.base_ref }}" --depth=1 || true
-          if git checkout "origin/${{ github.base_ref }}" -- scripts/dokploy-preview.mjs 2>/dev/null; then
-            echo "Using trusted scripts/dokploy-preview.mjs from ${{ github.base_ref }}"
+          set -euo pipefail
+          git fetch origin "$BASE_REF" --depth=1
+          if git checkout "origin/$BASE_REF" -- scripts/dokploy-preview.mjs; then
+            echo "Using trusted scripts/dokploy-preview.mjs from $BASE_REF"
+          elif [ "$ALLOW_PR_SCRIPT" = 'true' ]; then
+            echo "::warning::scripts/dokploy-preview.mjs is not on $BASE_REF; running the PR's copy because PREVIEW_ALLOW_PR_SCRIPT=true. Bootstrap only — unset this after merge."
           else
-            echo "::warning::scripts/dokploy-preview.mjs not on ${{ github.base_ref }} yet; using PR copy (bootstrap)"
+            echo "::error::scripts/dokploy-preview.mjs is not on $BASE_REF, so there is no trusted copy to run. Refusing to execute the PR's copy with deployment secrets in scope. For the one-time bootstrap, set repository variable PREVIEW_ALLOW_PR_SCRIPT=true."
+            exit 1
           fi
 
       - name: Create/update + deploy preview app
@@ -119,8 +135,12 @@ jobs:
             const marker = '<!-- dokploy-preview -->';
             const body = `${marker}\n🚀 **Preview deployed:** ${url}\n\n` +
               `_Built off-server in CI and deployed to Dokploy. Updated on every push; removed when this PR closes._`;
-            const { data: comments } = await github.rest.issues.listComments({
+            // Paginated: listComments returns only the first page, so on a long
+            // PR the marker could sit past it and every run would add another
+            // comment instead of editing the one already there.
+            const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number,
+              per_page: 100,
             });
             const existing = comments.find(c => c.body && c.body.includes(marker));
             if (existing) {
@@ -143,14 +163,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      # Use the base-branch (trusted) script with the deploy secrets in scope.
+      # Same trusted-script rule as the deploy job, and the same reason to fail
+      # closed: teardown runs with DOKPLOY_API_KEY and deletes an application,
+      # so it is the last place to run PR-controlled code.
       - name: Use trusted orchestration script (base branch)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          ALLOW_PR_SCRIPT: ${{ vars.PREVIEW_ALLOW_PR_SCRIPT }}
         run: |
-          git fetch origin "${{ github.base_ref }}" --depth=1 || true
-          if git checkout "origin/${{ github.base_ref }}" -- scripts/dokploy-preview.mjs 2>/dev/null; then
-            echo "Using trusted scripts/dokploy-preview.mjs from ${{ github.base_ref }}"
+          set -euo pipefail
+          git fetch origin "$BASE_REF" --depth=1
+          if git checkout "origin/$BASE_REF" -- scripts/dokploy-preview.mjs; then
+            echo "Using trusted scripts/dokploy-preview.mjs from $BASE_REF"
+          elif [ "$ALLOW_PR_SCRIPT" = 'true' ]; then
+            echo "::warning::scripts/dokploy-preview.mjs is not on $BASE_REF; running the PR's copy because PREVIEW_ALLOW_PR_SCRIPT=true. Bootstrap only — unset this after merge."
           else
-            echo "::warning::scripts/dokploy-preview.mjs not on ${{ github.base_ref }} yet; using PR copy (bootstrap)"
+            echo "::error::scripts/dokploy-preview.mjs is not on $BASE_REF, so there is no trusted copy to run. Refusing to execute the PR's copy with deployment secrets in scope. For the one-time bootstrap, set repository variable PREVIEW_ALLOW_PR_SCRIPT=true."
+            exit 1
           fi
 
       - name: Delete preview app
@@ -170,8 +199,12 @@ jobs:
           script: |
             const marker = '<!-- dokploy-preview -->';
             const body = `${marker}\n🧹 Preview environment for this PR has been torn down.`;
-            const { data: comments } = await github.rest.issues.listComments({
+            // Paginated: listComments returns only the first page, so on a long
+            // PR the marker could sit past it and every run would add another
+            // comment instead of editing the one already there.
+            const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number,
+              per_page: 100,
             });
             const existing = comments.find(c => c.body && c.body.includes(marker));
             if (existing) {

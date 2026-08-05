@@ -71,12 +71,23 @@ async function call(path, { method = 'POST', query, body } = {}) {
 		body: method === 'POST' ? JSON.stringify(body ?? {}) : undefined
 	});
 	const text = await res.text();
-	if (!res.ok) throw new Error(`${method} /api/${path} -> ${res.status}: ${text.slice(0, 500)}`);
 	let json;
 	try {
 		json = text ? JSON.parse(text) : null;
 	} catch {
 		json = text;
+	}
+
+	// Never put the raw body in the error. application.one returns the app's
+	// whole env, so echoing a response into a CI log could publish every secret
+	// this app holds. Dokploy's errors carry a message/code, which is the useful
+	// part anyway; anything else degrades to the status alone.
+	if (!res.ok) {
+		const detail =
+			json && typeof json === 'object'
+				? [json.message, json.code].filter(Boolean).join(' ') || '(no message)'
+				: '(no message)';
+		throw new Error(`${method} /api/${path} -> ${res.status}: ${detail}`);
 	}
 	// Unwrap the { success, message, data } envelope when present.
 	return json && typeof json === 'object' && 'data' in json ? json.data : json;
@@ -149,6 +160,22 @@ function materializePreviewEnv(env) {
 	return materialized;
 }
 
+// The host:port/dbname a connection URL actually points at, or null if it will
+// not parse. Two URLs can differ byte-for-byte and still reach the same physical
+// database — a ?sslmode= param, different credentials, a host alias — so raw
+// string equality is not enough to tell a preview DB from the production one.
+//
+// WHATWG URL splits userinfo on the LAST '@', so a literal unescaped '@' in the
+// password (some of these have one) still leaves host and database name intact.
+function dbTarget(url) {
+	try {
+		const u = new URL(url);
+		return `${u.hostname}:${u.port}/${u.pathname.replace(/^\/+|\/+$/g, '')}`;
+	} catch {
+		return null;
+	}
+}
+
 // Defense in depth: refuse to deploy a preview whose DB is the production DB.
 function assertPreviewDb(previewEnv, prodEnv) {
 	const previewDb = getEnvValue(previewEnv, 'DATABASE_URL');
@@ -156,9 +183,18 @@ function assertPreviewDb(previewEnv, prodEnv) {
 	if (!previewDb) {
 		throw new Error('Preview env has no DATABASE_URL; refusing to deploy.');
 	}
-	if (prodDb && previewDb === prodDb) {
+
+	const previewTarget = dbTarget(previewDb);
+	if (!previewTarget) {
+		throw new Error('Preview DATABASE_URL is not a parsable URL; refusing to deploy.');
+	}
+
+	// Raw equality still catches the case where production's URL is unparsable
+	// and so has no target to compare against.
+	const prodTarget = dbTarget(prodDb);
+	if (previewDb === prodDb || (prodTarget && previewTarget === prodTarget)) {
 		throw new Error(
-			'Preview DATABASE_URL equals the production DATABASE_URL; refusing to deploy a preview against the production database.'
+			`Preview DATABASE_URL points at the production database (${previewTarget}); refusing to deploy a preview against it.`
 		);
 	}
 }
@@ -185,14 +221,28 @@ async function ensureDomain(appId) {
 	});
 }
 
+// Scoped to the preview environment, never the whole project. The production app
+// lives in the "production" environment of this same project, so a name match
+// across all environments could resolve to it — and `teardown` deletes whatever
+// this returns. Matching only inside DOKPLOY_PREVIEW_ENVIRONMENT_ID keeps the
+// blast radius inside the preview environment no matter what an app is called.
 async function findAppId() {
 	const project = await query('project.one', { projectId: DOKPLOY_PREVIEW_PROJECT_ID });
-	for (const environment of project.environments || []) {
-		const apps = environment.applications || environment.services?.applications || [];
-		const match = apps.find((a) => a.name === APP_NAME);
-		if (match) return match.applicationId;
+	const environment = (project.environments || []).find(
+		(e) => e.environmentId === DOKPLOY_PREVIEW_ENVIRONMENT_ID
+	);
+
+	// A missing environment means misconfiguration, not "no preview app yet".
+	// Returning null there would make deploy create an app and teardown silently
+	// skip, leaving previews stranded; fail loudly instead.
+	if (!environment) {
+		throw new Error(
+			`Preview environment ${DOKPLOY_PREVIEW_ENVIRONMENT_ID} not found in project ${DOKPLOY_PREVIEW_PROJECT_ID}.`
+		);
 	}
-	return null;
+
+	const apps = environment.applications || environment.services?.applications || [];
+	return apps.find((a) => a.name === APP_NAME)?.applicationId ?? null;
 }
 
 async function deploy() {

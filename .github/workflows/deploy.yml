@@ -15,9 +15,13 @@ on:
 # application.deploy). A ref-keyed group would let a workflow_dispatch from a
 # feature branch run alongside a master push, and if their two API calls
 # interleave, production can end up pinned to the wrong image.
+#
+# Production deploys queue rather than cancel. Cancelling mid-run can leave the
+# app pinned to an image whose deploy was never triggered, so the Dokploy record
+# and what is actually serving disagree. Waiting is the cheaper failure.
 concurrency:
   group: deploy-production
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   IMAGE: ghcr.io/${{ github.repository }}
