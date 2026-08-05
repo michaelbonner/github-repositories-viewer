@@ -145,7 +145,12 @@ jobs:
               owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number,
               per_page: 100,
             });
-            const existing = comments.find(c => c.body && c.body.includes(marker));
+            // Also match on author: the marker is just an HTML comment, so a PR
+            // author could put it in their own comment and have the workflow
+            // edit that instead of posting its own.
+            const existing = comments.find(c =>
+              c.body && c.body.includes(marker) && c.user && c.user.login === 'github-actions[bot]'
+            );
             if (existing) {
               await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body });
             } else {
@@ -209,7 +214,12 @@ jobs:
               owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number,
               per_page: 100,
             });
-            const existing = comments.find(c => c.body && c.body.includes(marker));
+            // Also match on author: the marker is just an HTML comment, so a PR
+            // author could put it in their own comment and have the workflow
+            // edit that instead of posting its own.
+            const existing = comments.find(c =>
+              c.body && c.body.includes(marker) && c.user && c.user.login === 'github-actions[bot]'
+            );
             if (existing) {
               await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body });
             } else {
