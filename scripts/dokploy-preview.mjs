@@ -312,7 +312,7 @@ required('DOKPLOY_URL', DOKPLOY_URL);
 // Matches --proto '=https' on the workflow's curl calls: this script sends the
 // API key and the GHCR password to this host, so a misconfigured http:// value
 // must fail before any of it goes out in cleartext.
-if (!/^https:///i.test(DOKPLOY_URL)) {
+if (!DOKPLOY_URL.toLowerCase().startsWith('https://')) {
 	console.error(`DOKPLOY_URL must be https:// (got ${DOKPLOY_URL.split('://')[0]}://).`);
 	process.exit(1);
 }
