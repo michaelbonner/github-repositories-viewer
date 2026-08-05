@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { decrypt } from "../lib/decrypt";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type DashboardRepo = {
   id: string;
@@ -25,6 +26,7 @@ type GithubRepository = {
 };
 
 export default function DashboardsPage() {
+  const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [tokenChecked, setTokenChecked] = useState(false);
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
@@ -331,10 +333,25 @@ export default function DashboardsPage() {
           {dashboards.map((d) => (
             <div
               key={d.id}
-              className="flex items-center justify-between py-4 px-4 border rounded-md hover:bg-gray-50"
+              role="link"
+              tabIndex={0}
+              onClick={() => router.push(`/dashboards/${d.id}`)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  router.push(`/dashboards/${d.id}`);
+                }
+              }}
+              className="flex items-center justify-between py-4 px-4 border rounded-md cursor-pointer hover:bg-gray-50 focus:ring-2 focus:ring-slate-900 focus:outline-hidden"
             >
               <div>
-                <p className="font-semibold">{d.name}</p>
+                <Link
+                  href={`/dashboards/${d.id}`}
+                  className="font-semibold hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {d.name}
+                </Link>
                 <p className="text-sm text-gray-500">
                   {d.repositories.length} repo
                   {d.repositories.length !== 1 ? "s" : ""}
@@ -344,12 +361,16 @@ export default function DashboardsPage() {
                 <Link
                   href={`/dashboards/${d.id}`}
                   className="py-1 px-3 text-sm rounded-md border hover:bg-gray-100"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   View
                 </Link>
                 <button
                   className="py-1 px-3 text-sm text-red-700 rounded-md border border-red-700 hover:bg-red-50"
-                  onClick={() => handleDelete(d.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleDelete(d.id);
+                  }}
                 >
                   Delete
                 </button>
