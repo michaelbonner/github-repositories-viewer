@@ -57,8 +57,12 @@ function required(name, value) {
 async function call(path, { method = 'POST', query, body } = {}) {
 	let url = `${DOKPLOY_URL}/api/${path}`;
 	if (query) url += '?' + new URLSearchParams(query).toString();
+	// Without a timeout, a Dokploy endpoint that accepts the connection and then
+	// never answers hangs the job. That is worst on teardown, where it would
+	// leave the preview app and its container running with nothing to remove them.
 	const res = await fetch(url, {
 		method,
+		signal: AbortSignal.timeout(60_000),
 		headers: {
 			'x-api-key': DOKPLOY_API_KEY,
 			'Content-Type': 'application/json',
@@ -159,6 +163,28 @@ function assertPreviewDb(previewEnv, prodEnv) {
 	}
 }
 
+// Attaching the host runs on every deploy, not just on create. If domain.create
+// ever failed after application.create succeeded, the app would exist from then
+// on, every later run would take the "update" path, and the preview would never
+// get a host — a permanently broken preview that still reports success.
+async function ensureDomain(appId) {
+	const domains = await query('domain.byApplicationId', { applicationId: appId });
+	if (Array.isArray(domains) && domains.some((d) => d.host === HOST)) return;
+
+	console.log(`Attaching ${HOST} to ${APP_NAME}...`);
+	await call('domain.create', {
+		body: {
+			applicationId: appId,
+			domainType: 'application',
+			host: HOST,
+			port: APP_PORT,
+			https: true,
+			certificateType: 'letsencrypt',
+			stripPath: false
+		}
+	});
+}
+
 async function findAppId() {
 	const project = await query('project.one', { projectId: DOKPLOY_PREVIEW_PROJECT_ID });
 	for (const environment of project.environments || []) {
@@ -196,17 +222,6 @@ async function deploy() {
 		await call('application.update', {
 			body: { applicationId: appId, sourceType: 'docker', autoDeploy: false, env }
 		});
-		await call('domain.create', {
-			body: {
-				applicationId: appId,
-				domainType: 'application',
-				host: HOST,
-				port: APP_PORT,
-				https: true,
-				certificateType: 'letsencrypt',
-				stripPath: false
-			}
-		});
 	} else {
 		console.log(`Updating existing preview app ${APP_NAME} (${appId})...`);
 		await call('application.saveDockerProvider', { body: { applicationId: appId, ...creds } });
@@ -214,6 +229,10 @@ async function deploy() {
 			body: { applicationId: appId, sourceType: 'docker', autoDeploy: false, env }
 		});
 	}
+
+	// Throws on failure, which exits non-zero — better a failed run than a
+	// "successful" one advertising a URL that resolves to nothing.
+	await ensureDomain(appId);
 
 	await call('application.deploy', { body: { applicationId: appId } });
 	console.log(`Deployed. Preview URL: https://${HOST}`);

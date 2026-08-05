@@ -30,6 +30,9 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # Without this the job inherits GitHub's 6h default, so a Dokploy endpoint
+    # that accepts the connection and then stalls would hold a runner all day.
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -88,7 +91,8 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           IMAGE_REF: ${{ steps.meta.outputs.image }}:${{ github.sha }}
         run: |
-          curl --fail --show-error --silent -X POST \
+          curl --fail --show-error --silent \
+            --proto '=https' --connect-timeout 10 --max-time 60 -X POST \
             "${DOKPLOY_URL}/api/application.saveDockerProvider" \
             -H "x-api-key: ${DOKPLOY_API_KEY}" \
             -H "Content-Type: application/json" \
@@ -100,7 +104,8 @@ jobs:
 
           # Partial update — `env` is deliberately not sent, so the runtime
           # config stays owned by the Dokploy UI.
-          curl --fail --show-error --silent -X POST \
+          curl --fail --show-error --silent \
+            --proto '=https' --connect-timeout 10 --max-time 60 -X POST \
             "${DOKPLOY_URL}/api/application.update" \
             -H "x-api-key: ${DOKPLOY_API_KEY}" \
             -H "Content-Type: application/json" \
@@ -112,7 +117,8 @@ jobs:
           DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
           DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
         run: |
-          curl --fail --show-error --silent -X POST \
+          curl --fail --show-error --silent \
+            --proto '=https' --connect-timeout 10 --max-time 60 -X POST \
             "${DOKPLOY_URL}/api/application.deploy" \
             -H "x-api-key: ${DOKPLOY_API_KEY}" \
             -H "Content-Type: application/json" \

@@ -12,9 +12,12 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
 
+# Build/deploy runs for a PR supersede each other, but teardown gets its own
+# group: sharing one would let a new push cancel an in-flight teardown and
+# strand the preview app and its container with nothing left to remove them.
 concurrency:
-  group: preview-${{ github.event.number }}
-  cancel-in-progress: true
+  group: preview-${{ github.event.number }}-${{ github.event.action == 'closed' && 'teardown' || 'deploy' }}
+  cancel-in-progress: ${{ github.event.action != 'closed' }}
 
 env:
   IMAGE: ghcr.io/${{ github.repository }}
@@ -29,8 +32,14 @@ env:
 jobs:
   # ---- Build + deploy preview (PR opened / updated / reopened) ----
   preview:
-    if: github.event.action != 'closed'
+    # `pull_request` withholds secrets from fork PRs, so on a fork the GHCR
+    # login and the Dokploy calls would fail on empty values — a red check that
+    # can never go green. Skip instead of failing.
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -104,7 +113,9 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const url = `https://${{ steps.vars.outputs.host }}`;
+            // Taken from the deploy step rather than rebuilt from the host, so
+            // the URL commented here is the one the script actually deployed.
+            const url = '${{ steps.deploy.outputs.preview_url }}';
             const marker = '<!-- dokploy-preview -->';
             const body = `${marker}\n🚀 **Preview deployed:** ${url}\n\n` +
               `_Built off-server in CI and deployed to Dokploy. Updated on every push; removed when this PR closes._`;
@@ -120,8 +131,11 @@ jobs:
 
   # ---- Teardown preview (PR closed / merged) ----
   teardown:
-    if: github.event.action == 'closed'
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       pull-requests: write
