@@ -33,6 +33,9 @@ env:
 
 jobs:
   build-and-deploy:
+    # workflow_dispatch can be started from any ref, and this job deploys
+    # straight to production, so refuse anything that is not master.
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     # Without this the job inherits GitHub's 6h default, so a Dokploy endpoint
     # that accepts the connection and then stalls would hold a runner all day.

@@ -12,12 +12,15 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
 
-# Build/deploy runs for a PR supersede each other, but teardown gets its own
-# group: sharing one would let a new push cancel an in-flight teardown and
-# strand the preview app and its container with nothing left to remove them.
+# One group per PR, and nothing cancels. Both alternatives are worse: sharing a
+# group with cancel-in-progress lets a new push kill an in-flight teardown and
+# strand the preview app, while separate groups let teardown and a deploy run at
+# once, so a close racing a push can delete an app mid-create or recreate one
+# just deleted. Serialising costs a redundant build on rapid pushes, which is
+# the cheapest of the three failures.
 concurrency:
-  group: preview-${{ github.event.number }}-${{ github.event.action == 'closed' && 'teardown' || 'deploy' }}
-  cancel-in-progress: ${{ github.event.action != 'closed' }}
+  group: preview-${{ github.event.number }}
+  cancel-in-progress: false
 
 env:
   IMAGE: ghcr.io/${{ github.repository }}

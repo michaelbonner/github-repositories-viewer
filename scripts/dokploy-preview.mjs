@@ -170,7 +170,12 @@ function materializePreviewEnv(env) {
 function dbTarget(url) {
 	try {
 		const u = new URL(url);
-		return `${u.hostname}:${u.port}/${u.pathname.replace(/^\/+|\/+$/g, '')}`;
+		// postgres://db/app and postgres://db:5432/app are the same database, so an
+		// implicit port has to normalise to the explicit one — otherwise the two
+		// spellings compare unequal and a production URL slips past the guard.
+		const port =
+			u.port || (u.protocol === 'postgres:' || u.protocol === 'postgresql:' ? '5432' : '');
+		return `${u.hostname}:${port}/${u.pathname.replace(/^\/+|\/+$/g, '')}`;
 	} catch {
 		return null;
 	}
@@ -304,6 +309,13 @@ async function teardown() {
 }
 
 required('DOKPLOY_URL', DOKPLOY_URL);
+// Matches --proto '=https' on the workflow's curl calls: this script sends the
+// API key and the GHCR password to this host, so a misconfigured http:// value
+// must fail before any of it goes out in cleartext.
+if (!/^https:///i.test(DOKPLOY_URL)) {
+	console.error(`DOKPLOY_URL must be https:// (got ${DOKPLOY_URL.split('://')[0]}://).`);
+	process.exit(1);
+}
 required('DOKPLOY_API_KEY', DOKPLOY_API_KEY);
 required('DOKPLOY_TEMPLATE_APPLICATION_ID', DOKPLOY_TEMPLATE_APPLICATION_ID);
 required('DOKPLOY_PREVIEW_PROJECT_ID', DOKPLOY_PREVIEW_PROJECT_ID);
