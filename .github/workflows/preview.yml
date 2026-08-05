@@ -94,6 +94,36 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # The non-empty check above cannot tell whether the token still WORKS. An
+      # expired or revoked one would sail past it, and then saveDockerProvider
+      # would replace Dokploy's working registry credentials with a dead value —
+      # leaving the app unable to pull anything, which is worse than a failed
+      # deploy. So prove the credential can read this exact image before it is
+      # stored anywhere.
+      #
+      # DOCKER_CONFIG points at a throwaway directory on purpose: the push login
+      # earlier in this job is still active, and without an isolated credential
+      # store `docker manifest inspect` would happily succeed on GHCR_TOKEN and
+      # tell us nothing about GHCR_PULL_TOKEN.
+      - name: Verify the pull token can actually read this image
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+          IMAGE_REF: ${{ steps.vars.outputs.image }}:pr-${{ github.event.number }}-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          DOCKER_CONFIG="$(mktemp -d)"
+          export DOCKER_CONFIG
+          trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+          if ! printf '%%s' "$GHCR_PULL_TOKEN" | docker login ghcr.io -u michaelbonner --password-stdin >/dev/null 2>&1; then
+            echo "::error::GHCR_PULL_TOKEN was rejected by ghcr.io. Not storing it on Dokploy, which would replace working registry credentials with an unusable one."
+            exit 1
+          fi
+          if ! docker manifest inspect "$IMAGE_REF" >/dev/null 2>&1; then
+            echo "::error::GHCR_PULL_TOKEN authenticated but cannot read $IMAGE_REF. It likely lacks read:packages or access to this package. Not storing it on Dokploy."
+            exit 1
+          fi
+          echo "GHCR_PULL_TOKEN can pull $IMAGE_REF"
+
       # Run the orchestration script from the BASE branch, not the PR, so a PR
       # cannot modify code that executes with DOKPLOY_API_KEY in scope.
       #
