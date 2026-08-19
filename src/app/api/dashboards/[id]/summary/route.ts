@@ -3,7 +3,6 @@ import { db } from "@/db";
 import { dashboards } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getGithubUser } from "@/app/lib/github";
-import OpenAI from "openai";
 
 function getToken(req: NextRequest): string | null {
   const auth = req.headers.get("Authorization");
@@ -54,16 +53,16 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
 
-  const openaiApiKey = process.env.OPENAI_API_KEY;
-  if (!openaiApiKey) {
+  const ollamaApiKey = process.env.OLLAMA_API_KEY;
+  if (!ollamaApiKey) {
     return NextResponse.json(
-      { error: "OpenAI not configured" },
+      { error: "Ollama not configured" },
       { status: 503 },
     );
   }
 
-  const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
-  const openai = new OpenAI({ apiKey: openaiApiKey });
+  const model = process.env.OLLAMA_MODEL ?? "glm-5.2:cloud";
+  const ollamaHost = process.env.OLLAMA_HOST ?? "https://ollama.com";
 
   const lines: string[] = [
     `# Activity Summary for "${dashboard.name}"`,
@@ -120,24 +119,40 @@ export async function POST(req: NextRequest, { params }: Params) {
   const prompt = lines.join("\n");
 
   try {
-    const completion = await openai.chat.completions.create({
-      model,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a helpful engineering manager assistant. Summarize the GitHub activity data provided in a concise, readable markdown format. Highlight key accomplishments, notable PRs, and any patterns or concerns.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+    const res = await fetch(`${ollamaHost}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${ollamaApiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        stream: false,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a helpful engineering manager assistant. Summarize the GitHub activity data provided in a concise, readable markdown format. Highlight key accomplishments, notable PRs, and any patterns or concerns.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+      }),
     });
-    const summary = completion.choices[0]?.message?.content ?? "";
+    if (!res.ok) {
+      const errText = await res.text();
+      return NextResponse.json(
+        { error: `Ollama request failed (${res.status}): ${errText}` },
+        { status: 502 },
+      );
+    }
+    const data = (await res.json()) as { message?: { content?: string } };
+    const summary = data.message?.content ?? "";
     return NextResponse.json({ summary });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "OpenAI request failed";
+    const message = err instanceof Error ? err.message : "Ollama request failed";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }
