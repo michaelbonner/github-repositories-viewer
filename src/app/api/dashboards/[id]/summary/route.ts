@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { dashboards } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getGithubUser } from "@/app/lib/github";
-import OpenAI from "openai";
+import { Ollama } from "ollama";
 
 function getToken(req: NextRequest): string | null {
   const auth = req.headers.get("Authorization");
@@ -62,10 +62,10 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
 
-  const model = process.env.OLLAMA_MODEL ?? "ollama/glm-5.2:cloud";
-  const client = new OpenAI({
-    apiKey: ollamaApiKey,
-    baseURL: "https://openrouter.ai/api/v1",
+  const model = process.env.OLLAMA_MODEL ?? "glm-5.2:cloud";
+  const client = new Ollama({
+    host: "https://ollama.com",
+    headers: { Authorization: `Bearer ${ollamaApiKey}` },
   });
 
   const lines: string[] = [
@@ -123,8 +123,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   const prompt = lines.join("\n");
 
   try {
-    const completion = await client.chat.completions.create({
+    const response = await client.chat({
       model,
+      stream: false,
       messages: [
         {
           role: "system",
@@ -137,7 +138,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         },
       ],
     });
-    const summary = completion.choices[0]?.message?.content ?? "";
+    const summary = response.message?.content ?? "";
     return NextResponse.json({ summary });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Ollama request failed";
