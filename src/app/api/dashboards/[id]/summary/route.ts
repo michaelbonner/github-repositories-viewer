@@ -54,16 +54,19 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
 
-  const openaiApiKey = process.env.OPENAI_API_KEY;
-  if (!openaiApiKey) {
+  const ollamaApiKey = process.env.OLLAMA_API_KEY;
+  if (!ollamaApiKey) {
     return NextResponse.json(
-      { error: "OpenAI not configured" },
+      { error: "Ollama not configured" },
       { status: 503 },
     );
   }
 
-  const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
-  const openai = new OpenAI({ apiKey: openaiApiKey });
+  const model = process.env.OLLAMA_MODEL ?? "ollama/glm-5.2:cloud";
+  const client = new OpenAI({
+    apiKey: ollamaApiKey,
+    baseURL: "https://openrouter.ai/api/v1",
+  });
 
   const lines: string[] = [
     `# Activity Summary for "${dashboard.name}"`,
@@ -120,7 +123,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const prompt = lines.join("\n");
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model,
       messages: [
         {
@@ -137,7 +140,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const summary = completion.choices[0]?.message?.content ?? "";
     return NextResponse.json({ summary });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "OpenAI request failed";
+    const message = err instanceof Error ? err.message : "Ollama request failed";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }
