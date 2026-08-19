@@ -52,7 +52,7 @@ RUN test -n "$NEXT_PUBLIC_ENCRYPTION_KEY" || { echo "NEXT_PUBLIC_ENCRYPTION_KEY 
 # script (and any flags it carries) stays the single definition of the build.
 RUN DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build \
     GITHUB_CLIENT_SECRET=build-time-placeholder \
-    OPENAI_API_KEY=build-time-placeholder \
+    OLLAMA_API_KEY=build-time-placeholder \
     npm run build
 
 # =====================================================================

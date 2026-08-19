@@ -3,7 +3,6 @@ import { db } from "@/db";
 import { dashboards } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getGithubUser } from "@/app/lib/github";
-import { Ollama } from "ollama";
 
 function getToken(req: NextRequest): string | null {
   const auth = req.headers.get("Authorization");
@@ -63,10 +62,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const model = process.env.OLLAMA_MODEL ?? "glm-5.2:cloud";
-  const client = new Ollama({
-    host: "https://ollama.com",
-    headers: { Authorization: `Bearer ${ollamaApiKey}` },
-  });
+  const ollamaHost = process.env.OLLAMA_HOST ?? "https://ollama.com";
 
   const lines: string[] = [
     `# Activity Summary for "${dashboard.name}"`,
@@ -123,22 +119,37 @@ export async function POST(req: NextRequest, { params }: Params) {
   const prompt = lines.join("\n");
 
   try {
-    const response = await client.chat({
-      model,
-      stream: false,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a helpful engineering manager assistant. Summarize the GitHub activity data provided in a concise, readable markdown format. Highlight key accomplishments, notable PRs, and any patterns or concerns.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+    const res = await fetch(`${ollamaHost}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${ollamaApiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        stream: false,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a helpful engineering manager assistant. Summarize the GitHub activity data provided in a concise, readable markdown format. Highlight key accomplishments, notable PRs, and any patterns or concerns.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+      }),
     });
-    const summary = response.message?.content ?? "";
+    if (!res.ok) {
+      const errText = await res.text();
+      return NextResponse.json(
+        { error: `Ollama request failed (${res.status}): ${errText}` },
+        { status: 502 },
+      );
+    }
+    const data = (await res.json()) as { message?: { content?: string } };
+    const summary = data.message?.content ?? "";
     return NextResponse.json({ summary });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Ollama request failed";
