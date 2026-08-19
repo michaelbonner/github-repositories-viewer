@@ -61,7 +61,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
 
-  const model = process.env.OLLAMA_MODEL ?? "glm-5.2:cloud";
+  const model = process.env.OLLAMA_MODEL ?? "glm-5.2";
   const ollamaHost = process.env.OLLAMA_HOST ?? "https://ollama.com";
 
   const lines: string[] = [
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const prompt = lines.join("\n");
 
   try {
-    const res = await fetch(`${ollamaHost}/api/chat`, {
+    const ollamaResponse = await fetch(`${ollamaHost}/api/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -141,15 +141,19 @@ export async function POST(req: NextRequest, { params }: Params) {
         ],
       }),
     });
-    if (!res.ok) {
-      const errText = await res.text();
+    if (!ollamaResponse.ok) {
+      const errorText = await ollamaResponse.text();
       return NextResponse.json(
-        { error: `Ollama request failed (${res.status}): ${errText}` },
+        {
+          error: `Ollama request failed (${ollamaResponse.status}): ${errorText}`,
+        },
         { status: 502 },
       );
     }
-    const data = (await res.json()) as { message?: { content?: string } };
-    const summary = data.message?.content ?? "";
+    const ollamaChatResponse = (await ollamaResponse.json()) as {
+      message?: { content?: string };
+    };
+    const summary = ollamaChatResponse.message?.content ?? "";
     return NextResponse.json({ summary });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Ollama request failed";
