@@ -21,25 +21,25 @@
     "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/typography": "^0.5.20",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
+    "@types/react-dom": "^19.2.5",
     "crypto-js": "^4.2.0",
     "drizzle-orm": "^0.45.2",
-    "eslint-config-next": "^16.3.2",
-    "next": "^16.3.2",
+    "eslint-config-next": "^16.3.3",
+    "next": "^16.3.3",
     "pg": "^8.23.0",
     "postcss": "^8.5.26",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-icons": "^5.7.0",
-    "streamdown": "^2.5.0",
+    "streamdown": "^2.6.0",
     "tailwindcss": "^4.3.3",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
     "@types/pg": "^8.23.1",
     "drizzle-kit": "^0.31.10",
-    "eslint": "9.x",
+    "eslint": "^10.9.1",
     "vitest": "^4.1.11"
   }
 }
