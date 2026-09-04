@@ -33,13 +33,13 @@
     "react-icons": "^5.7.0",
     "streamdown": "^2.6.0",
     "tailwindcss": "^4.3.3",
-    "typescript": "^7.0.2"
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
     "@types/pg": "^8.23.1",
     "drizzle-kit": "^0.31.10",
-    "eslint": "^10.9.1",
+    "eslint": "^9.0",
     "vitest": "^5.0.0"
   }
 }
