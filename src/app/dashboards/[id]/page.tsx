@@ -54,6 +54,16 @@ function formatDateTime(iso: string) {
   });
 }
 
+function roundUpToQuarterHour(date: Date) {
+  const rounded = new Date(date);
+  rounded.setSeconds(0, 0);
+  const remainder = rounded.getMinutes() % 15;
+  if (remainder !== 0) {
+    rounded.setMinutes(rounded.getMinutes() + (15 - remainder));
+  }
+  return rounded;
+}
+
 function formatDateTimeLocalValue(date: Date) {
   const timezoneOffsetMs = date.getTimezoneOffset() * 60 * 1000;
   return new Date(date.getTime() - timezoneOffsetMs)
@@ -241,11 +251,14 @@ export default function DashboardDetailPage() {
 
   const [since, setSince] = useState(() =>
     formatDateTimeLocalValue(
-      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      new Date(
+        roundUpToQuarterHour(new Date()).getTime() -
+          7 * 24 * 60 * 60 * 1000,
+      ),
     ),
   );
   const [until, setUntil] = useState(() =>
-    formatDateTimeLocalValue(new Date()),
+    formatDateTimeLocalValue(roundUpToQuarterHour(new Date())),
   );
   const [activity, setActivity] = useState<ActivityData | null>(null);
   const [selectedContributor, setSelectedContributor] = useState("");
@@ -683,7 +696,7 @@ export default function DashboardDetailPage() {
             className="py-2 px-3 leading-tight text-gray-700 rounded-sm border appearance-none focus:outline-hidden focus:shadow-outline"
             value={since}
             onChange={(e) => setSince(e.target.value)}
-            step="60"
+            step="900"
           />
         </div>
         <div>
@@ -696,7 +709,7 @@ export default function DashboardDetailPage() {
             className="py-2 px-3 leading-tight text-gray-700 rounded-sm border appearance-none focus:outline-hidden focus:shadow-outline"
             value={until}
             onChange={(e) => setUntil(e.target.value)}
-            step="60"
+            step="900"
           />
         </div>
         <button
