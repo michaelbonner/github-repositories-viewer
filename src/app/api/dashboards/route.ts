@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   const rows = await db.query.dashboards.findMany({
     where: eq(dashboards.githubUsername, user.login),
     with: { repositories: true },
-    orderBy: (d, { desc }) => [desc(d.createdAt)],
+    orderBy: (d, { asc }) => [asc(d.name)],
   });
 
   return NextResponse.json(rows);
