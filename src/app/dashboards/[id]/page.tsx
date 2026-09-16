@@ -247,6 +247,14 @@ export default function DashboardDetailPage() {
   const [token, setToken] = useState<string | null>(null);
   const [tokenChecked, setTokenChecked] = useState(false);
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = `${dashboard?.name ?? "Dashboard"} | GitHub Repositories Viewer`;
+    return () => {
+      document.title = previousTitle;
+    };
+  }, [dashboard?.name]);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
 
   const [since, setSince] = useState(() =>

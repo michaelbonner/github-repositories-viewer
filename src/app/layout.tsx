@@ -7,7 +7,7 @@ import { Nav } from "./components/Nav";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Github Repositories Viewer",
+  title: "GitHub Repositories Viewer",
   description: "A simple app to view your Github repositories",
 };
 

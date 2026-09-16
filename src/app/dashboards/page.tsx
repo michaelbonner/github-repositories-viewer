@@ -25,6 +25,14 @@ type GithubRepository = {
 };
 
 export default function DashboardsPage() {
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = "Dashboards | GitHub Repositories Viewer";
+    return () => {
+      document.title = previousTitle;
+    };
+  }, []);
+
   const [token, setToken] = useState<string | null>(null);
   const [tokenChecked, setTokenChecked] = useState(false);
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
