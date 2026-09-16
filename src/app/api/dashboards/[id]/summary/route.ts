@@ -61,7 +61,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
 
-  const model = process.env.OLLAMA_MODEL ?? "glm-5.2";
+  const model = process.env.OLLAMA_MODEL ?? "glm-5.3-flash";
   const ollamaHost = process.env.OLLAMA_HOST ?? "https://ollama.com";
 
   const lines: string[] = [
