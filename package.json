@@ -24,7 +24,7 @@
     "@types/react-dom": "^19.3.0",
     "crypto-js": "^4.2.0",
     "drizzle-orm": "^0.45.4",
-    "eslint-config-next": "^16.4.2",
+    "eslint-config-next": "^16.4.3",
     "next": "^16.4.2",
     "pg": "^8.23.1",
     "postcss": "^8.5.31",
